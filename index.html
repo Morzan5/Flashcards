@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2196F3">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>FlashCards - Apprentissage</title>
+    <link rel="manifest" href="data:application/json,{
+        'name': 'FlashCards Learning',
+        'short_name': 'FlashCards',
+        'start_url': '/',
+        'display': 'standalone',
+        'background_color': '#ffffff',
+        'theme_color': '#2196F3',
+        'icons': [
+            {'src': 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 192 192%22><rect fill=%22%232196F3%22 width=%22192%22 height=%22192%22/><text x=%2250%25%22 y=%2250%25%22 font-size=%22120%22 fill=%22white%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22>FC</text></svg>', 'sizes': '192x192', 'type': 'image/svg+xml'}
+        ]
+    }">
+    <style>
+        :root {
+            --primary: #2196F3;
+            --primary-dark: #1976D2;
+            --accent: #FF6B6B;
+            --success: #4CAF50;
+            --bg-light: #f5f5f5;
+            --bg-white: #ffffff;
+            --text-dark: #212121;
+            --text-light: #666666;
+            --border: #e0e0e0;
+            --shadow: 0 2px 8px rgba(0,0,0,0.1);
+            --shadow-lg: 0 8px 16px rgba(0,0,0,0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        .app-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: var(--bg-white);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-secondary {
+            background: var(--bg-light);
+            color: var(--text-dark);
+            border: 2px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: #eeeeee;
+        }
+
+        .btn-danger {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #e55555;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #45a049;
+        }
+
+        .btn-sm {
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+
+        .btn-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .card-info {
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-dark);
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-label {
+            display: block;
+            padding: 10px 16px;
+            background: var(--bg-light);
+            border: 2px dashed var(--primary);
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 13px;
+            color: var(--primary);
+            transition: all 0.3s ease;
+        }
+
+        .file-label:hover {
+            background: rgba(33, 150, 243, 0.05);
+        }
+
+        .image-preview {
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        .image-preview img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+        }
+
+        /* Flashcard Learning */
+        .flashcard-container {
+            perspective: 1000px;
+            margin: 40px 0;
+        }
+
+        .flashcard {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border-radius: 16px;
+            padding: 30px;
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: var(--shadow-lg);
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            position: relative;
+            user-select: none;
+        }
+
+        .flashcard.flipped {
+            background: linear-gradient(135deg, var(--accent) 0%, #e55555 100%);
+        }
+
+        .flashcard-image {
+            width: 150px;
+            height: 150px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            object-fit: cover;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .flashcard-label {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .flashcard-text {
+            font-size: 28px;
+            font-weight: 600;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .flashcard-hint {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            font-size: 11px;
+            opacity: 0.7;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--success);
+            transition: width 0.3s ease;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: var(--bg-light);
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-light);
+            margin-top: 4px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: flex-end;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-white);
+            width: 100%;
+            padding: 20px;
+            border-radius: 16px 16px 0 0;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .modal-header {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-light);
+        }
+
+        .list-item {
+            background: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .list-item-info {
+            flex: 1;
+        }
+
+        .list-item-name {
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+        }
+
+        .list-item-count {
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-light);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .action-buttons .btn {
+            flex: 1;
+            min-width: 120px;
+            justify-content: center;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-correct {
+            background: rgba(76, 175, 80, 0.2);
+            color: var(--success);
+        }
+
+        .badge-incorrect {
+            background: rgba(255, 107, 107, 0.2);
+            color: var(--accent);
+        }
+
+        .badge-learning {
+            background: rgba(33, 150, 243, 0.2);
+            color: var(--primary);
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .content {
+                padding: 16px;
+            }
+
+            .flashcard {
+                min-height: 250px;
+                padding: 20px;
+            }
+
+            .flashcard-text {
+                font-size: 24px;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📚 FlashCards</h1>
+            <div class="header-actions">
+                <button class="btn btn-icon btn-secondary" onclick="toggleSettings()" title="Paramètres">⚙️</button>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- Écran Accueil / Listes -->
+            <div id="homeScreen" class="screen active">
+                <div style="margin-bottom: 20px;">
+                    <h2 style="margin-bottom: 16px; font-size: 20px;">Mes Listes de Flashcards</h2>
+                </div>
+
+                <div id="listContainer"></div>
+
+                <button class="btn btn-primary btn-icon" onclick="showCreateListModal()" style="position: fixed; bottom: 30px; right: 20px; box-shadow: var(--shadow-lg);" title="Créer une nouvelle liste">
+                    <span style="font-size: 28px;">+</span>
+                </button>
+            </div>
+
+            <!-- Écran Modification/Gestion d'une liste -->
+            <div id="editListScreen" class="screen">
+                <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <h2 id="editListTitle" style="margin: 0; font-size: 20px;"></h2>
+                    <button class="btn btn-secondary btn-sm" onclick="showHomeScreen()">← Retour</button>
+                </div>
+
+                <div id="cardsInListContainer"></div>
+
+                <button class="btn btn-primary" onclick="showAddCardModal()" style="width: 100%; margin-top: 20px; justify-content: center;">
+                    + Ajouter une Carte
+                </button>
+            </div>
+
+            <!-- Écran Apprentissage -->
+            <div id="learningScreen" class="screen">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 id="learningListTitle" style="margin: 0; font-size: 18px;"></h2>
+                    <button class="btn btn-secondary btn-sm" onclick="endLearning()">✕ Quitter</button>
+                </div>
+
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-number" id="cardIndex">1</div>
+                        <div class="stat-label">Carte actuelle</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="totalCards">0</div>
+                        <div class="stat-label">Total</div>
+                    </div>
+                </div>
+
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+
+                <div class="flashcard-container">
+                    <div class="flashcard" id="flashcard" onclick="flipCard()">
+                        <div class="flashcard-label">RECTO</div>
+                        <img id="frontImage" class="flashcard-image" style="display: none;" />
+                        <div class="flashcard-text" id="cardFront"></div>
+                        <div class="flashcard-hint">Cliquez pour retourner</div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-danger" onclick="markCardIncorrect()">✕ Oublié</button>
+                    <button class="btn btn-success" onclick="markCardCorrect()">✓ Connu</button>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-secondary" onclick="previousCard()" style="flex: 1;">← Précédent</button>
+                    <button class="btn btn-secondary" onclick="nextCard()" style="flex: 1;">Suivant →</button>
+                </div>
+            </div>
+
+            <!-- Settings Screen -->
+            <div id="settingsScreen" class="screen">
+                <h2 style="margin-bottom: 20px; font-size: 20px;">Paramètres</h2>
+                <button class="btn btn-secondary" onclick="toggleSettings()" style="width: 100%; margin-bottom: 12px;">← Retour</button>
+                
+                <div style="margin-bottom: 12px;">
+                    <label class="file-label" for="importFile" style="margin-bottom: 0;">
+                        📥 Importer des listes (JSON)
+                    </label>
+                    <input type="file" id="importFile" accept=".json" style="display: none;">
+                </div>
+                
+                <button class="btn btn-primary" onclick="exportData()" style="width: 100%; margin-bottom: 12px;">📤 Exporter les listes</button>
+                <button class="btn btn-danger" onclick="clearAllData()" style="width: 100%;">🗑️ Supprimer toutes les données</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="createListModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>Créer une nouvelle liste</span>
+                <button class="close-btn" onclick="closeCreateListModal()">✕</button>
+            </div>
+            <div class="form-group">
+                <label for="listName">Nom de la liste</label>
+                <input type="text" id="listName" placeholder="Ex: Vocabulaire Espagnol" required>
+            </div>
+            <button class="btn btn-primary" onclick="createList()" style="width: 100%;">Créer la liste</button>
+        </div>
+    </div>
+
+    <div id="addCardModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>Ajouter une carte</span>
+                <button class="close-btn" onclick="closeAddCardModal()">✕</button>
+            </div>
+
+            <div class="form-group">
+                <label for="cardFrontText">Mot/Texte Recto *</label>
+                <textarea id="cardFrontText" placeholder="Entrez le mot ou le texte à mémoriser" required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Image Recto (optionnel)</label>
+                <div class="file-input-wrapper">
+                    <label class="file-label" for="cardFrontImage">
+                        📷 Cliquez pour ajouter une image
+                    </label>
+                    <input type="file" id="cardFrontImage" accept="image/*">
+                </div>
+                <div id="frontImagePreview" class="image-preview"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="cardBackText">Mot/Texte Verso *</label>
+                <textarea id="cardBackText" placeholder="Entrez la traduction ou la réponse" required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Image Verso (optionnel)</label>
+                <div class="file-input-wrapper">
+                    <label class="file-label" for="cardBackImage">
+                        📷 Cliquez pour ajouter une image
+                    </label>
+                    <input type="file" id="cardBackImage" accept="image/*">
+                </div>
+                <div id="backImagePreview" class="image-preview"></div>
+            </div>
+
+            <button class="btn btn-primary" onclick="addCard()" style="width: 100%;">Ajouter la carte</button>
+        </div>
+    </div>
+
+    <div id="editCardModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>Modifier la carte</span>
+                <button class="close-btn" onclick="closeEditCardModal()">✕</button>
+            </div>
+
+            <div class="form-group">
+                <label for="editCardFrontText">Mot/Texte Recto *</label>
+                <textarea id="editCardFrontText" required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Image Recto (optionnel)</label>
+                <div class="file-input-wrapper">
+                    <label class="file-label" for="editCardFrontImage">
+                        📷 Cliquez pour changer l'image
+                    </label>
+                    <input type="file" id="editCardFrontImage" accept="image/*">
+                </div>
+                <div id="editFrontImagePreview" class="image-preview"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="editCardBackText">Mot/Texte Verso *</label>
+                <textarea id="editCardBackText" required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Image Verso (optionnel)</label>
+                <div class="file-input-wrapper">
+                    <label class="file-label" for="editCardBackImage">
+                        📷 Cliquez pour changer l'image
+                    </label>
+                    <input type="file" id="editCardBackImage" accept="image/*">
+                </div>
+                <div id="editBackImagePreview" class="image-preview"></div>
+            </div>
+
+            <button class="btn btn-primary" onclick="updateCard()" style="width: 100%; margin-bottom: 12px;">Modifier la carte</button>
+            <button class="btn btn-danger" onclick="deleteCard()" style="width: 100%;">Supprimer la carte</button>
+        </div>
+    </div>
+
+    <script>
+        // Data Management
+        class FlashcardApp {
+            constructor() {
+                this.data = this.loadData();
+                this.currentListId = null;
+                this.currentCardIndex = 0;
+                this.isFlipped = false;
+                this.cardStats = {}; // Track card learning progress
+                this.editingCardId = null;
+            }
+
+            loadData() {
+                const saved = localStorage.getItem('flashcardData');
+                return saved ? JSON.parse(saved) : { lists: [] };
+            }
+
+            saveData() {
+                localStorage.setItem('flashcardData', JSON.stringify(this.data));
+            }
+
+            createList(name) {
+                const list = {
+                    id: Date.now(),
+                    name: name,
+                    cards: [],
+                    createdAt: new Date().toISOString()
+                };
+                this.data.lists.push(list);
+                this.saveData();
+                return list.id;
+            }
+
+            deleteList(listId) {
+                this.data.lists = this.data.lists.filter(l => l.id !== listId);
+                this.saveData();
+            }
+
+            updateListName(listId, name) {
+                const list = this.data.lists.find(l => l.id === listId);
+                if (list) {
+                    list.name = name;
+                    this.saveData();
+                }
+            }
+
+            getList(listId) {
+                return this.data.lists.find(l => l.id === listId);
+            }
+
+            addCard(listId, card) {
+                const list = this.getList(listId);
+                if (list) {
+                    const newCard = {
+                        id: Date.now(),
+                        front: card.front,
+                        frontImage: card.frontImage,
+                        back: card.back,
+                        backImage: card.backImage,
+                        createdAt: new Date().toISOString()
+                    };
+                    list.cards.push(newCard);
+                    this.saveData();
+                    return newCard.id;
+                }
+            }
+
+            updateCard(listId, cardId, cardData) {
+                const list = this.getList(listId);
+                if (list) {
+                    const card = list.cards.find(c => c.id === cardId);
+                    if (card) {
+                        Object.assign(card, cardData);
+                        this.saveData();
+                    }
+                }
+            }
+
+            deleteCard(listId, cardId) {
+                const list = this.getList(listId);
+                if (list) {
+                    list.cards = list.cards.filter(c => c.id !== cardId);
+                    this.saveData();
+                }
+            }
+
+            clearAllData() {
+                if (confirm('⚠️ Êtes-vous sûr ? Cette action est irréversible.')) {
+                    this.data = { lists: [] };
+                    this.cardStats = {};
+                    this.saveData();
+                    localStorage.removeItem('cardStats');
+                    showHomeScreen();
+                    renderLists();
+                }
+            }
+        }
+
+        const app = new FlashcardApp();
+
+        // UI Functions
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function showHomeScreen() {
+            showScreen('homeScreen');
+            renderLists();
+            app.currentListId = null;
+        }
+
+        function renderLists() {
+            const container = document.getElementById('listContainer');
+            
+            if (app.data.lists.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <div class="empty-state-title">Aucune liste créée</div>
+                        <p>Cliquez sur le bouton + pour créer votre première liste de flashcards</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = app.data.lists.map(list => `
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">${escapeHtml(list.name)}</div>
+                            <div class="card-info">${list.cards.length} carte${list.cards.length !== 1 ? 's' : ''}</div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn btn-primary" onclick="startLearning(${list.id})">🎓 Apprendre</button>
+                        <button class="btn btn-secondary" onclick="editList(${list.id})">✏️ Modifier</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteListConfirm(${list.id})">🗑️ Supprimer</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function editList(listId) {
+            app.currentListId = listId;
+            const list = app.getList(listId);
+            document.getElementById('editListTitle').textContent = escapeHtml(list.name);
+            renderCardsInList();
+            showScreen('editListScreen');
+        }
+
+        function renderCardsInList() {
+            const list = app.getList(app.currentListId);
+            const container = document.getElementById('cardsInListContainer');
+
+            if (!list || list.cards.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🃏</div>
+                        <div class="empty-state-title">Aucune carte</div>
+                        <p>Créez votre première carte de flashcard</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = list.cards.map(card => `
+                <div class="card">
+                    <div class="card-header">
+                        <div style="flex: 1;">
+                            <div class="card-title">${escapeHtml(card.front)}</div>
+                            <div class="card-info">→ ${escapeHtml(card.back)}</div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn btn-secondary btn-sm" onclick="openEditCardModal(${card.id})">Modifier</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteCardConfirm(${card.id})">Supprimer</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function startLearning(listId) {
+            const list = app.getList(listId);
+            if (!list || list.cards.length === 0) {
+                alert('⚠️ Cette liste ne contient pas de cartes !');
+                return;
+            }
+
+            app.currentListId = listId;
+            app.currentCardIndex = 0;
+            app.isFlipped = false;
+
+            document.getElementById('learningListTitle').textContent = escapeHtml(list.name);
+            document.getElementById('totalCards').textContent = list.cards.length;
+
+            displayCard();
+            showScreen('learningScreen');
+        }
+
+        function displayCard() {
+            const list = app.getList(app.currentListId);
+            const card = list.cards[app.currentCardIndex];
+
+            const flashcardEl = document.getElementById('flashcard');
+            flashcardEl.classList.remove('flipped');
+            app.isFlipped = false;
+
+            document.getElementById('cardIndex').textContent = app.currentCardIndex + 1;
+            document.getElementById('cardFront').textContent = escapeHtml(card.front);
+
+            const frontImageEl = document.getElementById('frontImage');
+            if (card.frontImage) {
+                frontImageEl.src = card.frontImage;
+                frontImageEl.style.display = 'block';
+            } else {
+                frontImageEl.style.display = 'none';
+            }
+
+            const progress = ((app.currentCardIndex + 1) / list.cards.length) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+        }
+
+        function flipCard() {
+            const list = app.getList(app.currentListId);
+            const card = list.cards[app.currentCardIndex];
+            const flashcardEl = document.getElementById('flashcard');
+
+            app.isFlipped = !app.isFlipped;
+
+            if (app.isFlipped) {
+                flashcardEl.classList.add('flipped');
+                document.querySelector('.flashcard-label').textContent = 'VERSO';
+                document.getElementById('cardFront').textContent = escapeHtml(card.back);
+
+                const frontImageEl = document.getElementById('frontImage');
+                if (card.backImage) {
+                    frontImageEl.src = card.backImage;
+                    frontImageEl.style.display = 'block';
+                } else {
+                    frontImageEl.style.display = 'none';
+                }
+            } else {
+                flashcardEl.classList.remove('flipped');
+                document.querySelector('.flashcard-label').textContent = 'RECTO';
+                document.getElementById('cardFront').textContent = escapeHtml(card.front);
+
+                const frontImageEl = document.getElementById('frontImage');
+                if (card.frontImage) {
+                    frontImageEl.src = card.frontImage;
+                    frontImageEl.style.display = 'block';
+                } else {
+                    frontImageEl.style.display = 'none';
+                }
+            }
+        }
+
+        function nextCard() {
+            const list = app.getList(app.currentListId);
+            if (app.currentCardIndex < list.cards.length - 1) {
+                app.currentCardIndex++;
+                displayCard();
+            }
+        }
+
+        function previousCard() {
+            if (app.currentCardIndex > 0) {
+                app.currentCardIndex--;
+                displayCard();
+            }
+        }
+
+        function markCardCorrect() {
+            const list = app.getList(app.currentListId);
+            const card = list.cards[app.currentCardIndex];
+            console.log('Marqué comme connu:', escapeHtml(card.front));
+            nextCard();
+        }
+
+        function markCardIncorrect() {
+            const list = app.getList(app.currentListId);
+            const card = list.cards[app.currentCardIndex];
+            console.log('Marqué comme oublié:', escapeHtml(card.front));
+            nextCard();
+        }
+
+        function endLearning() {
+            showHomeScreen();
+        }
+
+        // Modal Functions
+        function showCreateListModal() {
+            document.getElementById('createListModal').classList.add('active');
+            document.getElementById('listName').focus();
+        }
+
+        function closeCreateListModal() {
+            document.getElementById('createListModal').classList.remove('active');
+            document.getElementById('listName').value = '';
+        }
+
+        function createList() {
+            const name = document.getElementById('listName').value.trim();
+            if (!name) {
+                alert('⚠️ Veuillez entrer un nom pour la liste');
+                return;
+            }
+            app.createList(name);
+            closeCreateListModal();
+            renderLists();
+        }
+
+        function deleteListConfirm(listId) {
+            const list = app.getList(listId);
+            if (confirm(`Êtes-vous sûr de vouloir supprimer la liste "${escapeHtml(list.name)}" et ses cartes ?`)) {
+                app.deleteList(listId);
+                renderLists();
+            }
+        }
+
+        function showAddCardModal() {
+            document.getElementById('addCardModal').classList.add('active');
+            clearCardForm();
+            document.getElementById('cardFrontText').focus();
+        }
+
+        function closeAddCardModal() {
+            document.getElementById('addCardModal').classList.remove('active');
+            clearCardForm();
+        }
+
+        function clearCardForm() {
+            document.getElementById('cardFrontText').value = '';
+            document.getElementById('cardBackText').value = '';
+            document.getElementById('cardFrontImage').value = '';
+            document.getElementById('cardBackImage').value = '';
+            document.getElementById('frontImagePreview').innerHTML = '';
+            document.getElementById('backImagePreview').innerHTML = '';
+        }
+
+        // Image handling
+        document.getElementById('cardFrontImage')?.addEventListener('change', function(e) {
+            handleImagePreview(e, 'frontImagePreview');
+        });
+
+        document.getElementById('cardBackImage')?.addEventListener('change', function(e) {
+            handleImagePreview(e, 'backImagePreview');
+        });
+
+        document.getElementById('editCardFrontImage')?.addEventListener('change', function(e) {
+            handleImagePreview(e, 'editFrontImagePreview');
+        });
+
+        document.getElementById('editCardBackImage')?.addEventListener('change', function(e) {
+            handleImagePreview(e, 'editBackImagePreview');
+        });
+
+        function handleImagePreview(event, previewId) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById(previewId);
+                    preview.innerHTML = `<img src="${e.target.result}" alt="Aperçu">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function addCard() {
+            const front = document.getElementById('cardFrontText').value.trim();
+            const back = document.getElementById('cardBackText').value.trim();
+
+            if (!front || !back) {
+                alert('⚠️ Le mot/texte recto et verso sont obligatoires');
+                return;
+            }
+
+            let frontImage = null;
+            let backImage = null;
+
+            const frontFile = document.getElementById('cardFrontImage').files[0];
+            const backFile = document.getElementById('cardBackImage').files[0];
+
+            let filesProcessed = 0;
+            const totalFiles = (frontFile ? 1 : 0) + (backFile ? 1 : 0);
+
+            if (totalFiles === 0) {
+                finishAddingCard(front, back, null, null);
+            } else {
+                if (frontFile) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        frontImage = e.target.result;
+                        filesProcessed++;
+                        if (filesProcessed === totalFiles) {
+                            finishAddingCard(front, back, frontImage, backImage);
+                        }
+                    };
+                    reader.readAsDataURL(frontFile);
+                }
+
+                if (backFile) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        backImage = e.target.result;
+                        filesProcessed++;
+                        if (filesProcessed === totalFiles) {
+                            finishAddingCard(front, back, frontImage, backImage);
+                        }
+                    };
+                    reader.readAsDataURL(backFile);
+                }
+            }
+        }
+
+        function finishAddingCard(front, back, frontImage, backImage) {
+            app.addCard(app.currentListId, { front, back, frontImage, backImage });
+            closeAddCardModal();
+            renderCardsInList();
+        }
+
+        function openEditCardModal(cardId) {
+            app.editingCardId = cardId;
+            const list = app.getList(app.currentListId);
+            const card = list.cards.find(c => c.id === cardId);
+
+            document.getElementById('editCardFrontText').value = card.front;
+            document.getElementById('editCardBackText').value = card.back;
+
+            const editFrontPreview = document.getElementById('editFrontImagePreview');
+            const editBackPreview = document.getElementById('editBackImagePreview');
+
+            editFrontPreview.innerHTML = card.frontImage ? `<img src="${card.frontImage}" alt="Aperçu">` : '';
+            editBackPreview.innerHTML = card.backImage ? `<img src="${card.backImage}" alt="Aperçu">` : '';
+
+            document.getElementById('editCardModal').classList.add('active');
+        }
+
+        function closeEditCardModal() {
+            document.getElementById('editCardModal').classList.remove('active');
+            app.editingCardId = null;
+        }
+
+        function updateCard() {
+            const front = document.getElementById('editCardFrontText').value.trim();
+            const back = document.getElementById('editCardBackText').value.trim();
+
+            if (!front || !back) {
+                alert('⚠️ Le mot/texte recto et verso sont obligatoires');
+                return;
+            }
+
+            const list = app.getList(app.currentListId);
+            const card = list.cards.find(c => c.id === app.editingCardId);
+
+            let frontImage = card.frontImage;
+            let backImage = card.backImage;
+
+            const frontFile = document.getElementById('editCardFrontImage').files[0];
+            const backFile = document.getElementById('editCardBackImage').files[0];
+
+            let filesProcessed = 0;
+            const totalFiles = (frontFile ? 1 : 0) + (backFile ? 1 : 0);
+
+            if (totalFiles === 0) {
+                finishUpdatingCard(front, back, frontImage, backImage);
+            } else {
+                if (frontFile) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        frontImage = e.target.result;
+                        filesProcessed++;
+                        if (filesProcessed === totalFiles) {
+                            finishUpdatingCard(front, back, frontImage, backImage);
+                        }
+                    };
+                    reader.readAsDataURL(frontFile);
+                }
+
+                if (backFile) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        backImage = e.target.result;
+                        filesProcessed++;
+                        if (filesProcessed === totalFiles) {
+                            finishUpdatingCard(front, back, frontImage, backImage);
+                        }
+                    };
+                    reader.readAsDataURL(backFile);
+                }
+            }
+        }
+
+        function finishUpdatingCard(front, back, frontImage, backImage) {
+            app.updateCard(app.currentListId, app.editingCardId, { front, back, frontImage, backImage });
+            closeEditCardModal();
+            renderCardsInList();
+        }
+
+        function deleteCard() {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cette carte ?')) {
+                app.deleteCard(app.currentListId, app.editingCardId);
+                closeEditCardModal();
+                renderCardsInList();
+            }
+        }
+
+        function deleteCardConfirm(cardId) {
+            openEditCardModal(cardId);
+            setTimeout(() => deleteCard(), 100);
+        }
+
+        function toggleSettings() {
+            const settingsScreen = document.getElementById('settingsScreen');
+            if (settingsScreen.classList.contains('active')) {
+                showHomeScreen();
+            } else {
+                showScreen('settingsScreen');
+            }
+        }
+
+        function clearAllData() {
+            app.clearAllData();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Import/Export Functions
+        document.getElementById('importFile')?.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const importedData = JSON.parse(event.target.result);
+                    
+                    // Validation basique
+                    if (!importedData.lists || !Array.isArray(importedData.lists)) {
+                        alert('❌ Format de fichier invalide');
+                        return;
+                    }
+
+                    // Demander confirmation
+                    if (confirm('📥 Importer ces listes ?\n\nCela ajoutera les listes importées à vos listes existantes.')) {
+                        // Ajouter les listes importées
+                        importedData.lists.forEach(importedList => {
+                            const newList = {
+                                id: Date.now() + Math.random(),
+                                name: importedList.name,
+                                cards: importedList.cards || [],
+                                createdAt: new Date().toISOString()
+                            };
+                            app.data.lists.push(newList);
+                        });
+
+                        app.saveData();
+                        alert('✅ Listes importées avec succès !');
+                        renderLists();
+                        showHomeScreen();
+                    }
+                } catch (error) {
+                    alert('❌ Erreur lors de la lecture du fichier: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        });
+
+        function exportData() {
+            if (app.data.lists.length === 0) {
+                alert('⚠️ Aucune liste à exporter');
+                return;
+            }
+
+            const dataToExport = {
+                version: '1.0',
+                exportedAt: new Date().toISOString(),
+                lists: app.data.lists
+            };
+
+            const dataStr = JSON.stringify(dataToExport, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `flashcards_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            alert('✅ Listes exportées avec succès !');
+        }
+
+        // Close modals when clicking outside
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                }
+            });
+        });
+
+        // Initialize
+        renderLists();
+
+        // Service Worker Registration (PWA)
+        if ('serviceWorker' in navigator) {
+            const swCode = `
+                self.addEventListener('install', e => {
+                    console.log('Service Worker installing...');
+                    self.skipWaiting();
+                });
+
+                self.addEventListener('activate', e => {
+                    console.log('Service Worker activating...');
+                    e.waitUntil(clients.claim());
+                });
+
+                self.addEventListener('fetch', e => {
+                    e.respondWith(fetch(e.request).catch(() => new Response('Offline')));
+                });
+            `;
+
+            const blob = new Blob([swCode], { type: 'application/javascript' });
+            const swUrl = URL.createObjectURL(blob);
+
+            navigator.serviceWorker.register(swUrl).catch(e => {
+                console.log('Service Worker registration failed:', e);
+            });
+        }
+    </script>
+</body>
+</html>
