@@ -4,20 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#2196F3">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>FlashCards - Apprentissage</title>
-    <link rel="manifest" href="data:application/json,{
-        'name': 'FlashCards Learning',
-        'short_name': 'FlashCards',
-        'start_url': '/',
-        'display': 'standalone',
-        'background_color': '#ffffff',
-        'theme_color': '#2196F3',
-        'icons': [
-            {'src': 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 192 192%22><rect fill=%22%232196F3%22 width=%22192%22 height=%22192%22/><text x=%2250%25%22 y=%2250%25%22 font-size=%22120%22 fill=%22white%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22>FC</text></svg>', 'sizes': '192x192', 'type': 'image/svg+xml'}
-        ]
-    }">
     <style>
         :root {
             --primary: #2196F3;
@@ -33,11 +20,7 @@
             --shadow-lg: 0 8px 16px rgba(0,0,0,0.15);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -55,1321 +38,1207 @@
             flex-direction: column;
         }
 
+        /* ── Header ── */
         .header {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-            padding: 20px;
+            color: white; padding: 20px;
             box-shadow: var(--shadow);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: flex; justify-content: space-between; align-items: center;
         }
+        .header h1 { font-size: 24px; font-weight: 600; }
+        .header-actions { display: flex; gap: 10px; align-items: center; }
+        .header-user { font-size: 12px; opacity: 0.85; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-        .header h1 {
-            font-size: 24px;
-            font-weight: 600;
+        .content { flex: 1; padding: 20px; overflow-y: auto; }
+
+        .screen { display: none; }
+        .screen.active { display: block; animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* ── Loader global ── */
+        #globalLoader {
+            position: fixed; inset: 0;
+            background: white;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 9999; gap: 16px;
         }
-
-        .header-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .content {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-        }
-
-        .screen {
-            display: none;
-        }
-
-        .screen.active {
-            display: block;
-            animation: fadeIn 0.3s ease-in;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        /* Buttons */
-        .btn {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-dark);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .btn-secondary {
-            background: var(--bg-light);
-            color: var(--text-dark);
-            border: 2px solid var(--border);
-        }
-
-        .btn-secondary:hover {
-            background: #eeeeee;
-        }
-
-        .btn-danger {
-            background: var(--accent);
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #e55555;
-        }
-
-        .btn-success {
-            background: var(--success);
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #45a049;
-        }
-
-        .btn-sm {
-            padding: 8px 12px;
-            font-size: 12px;
-        }
-
-        .btn-icon {
-            width: 50px;
-            height: 50px;
+        #globalLoader.hidden { display: none; }
+        .spinner {
+            width: 48px; height: 48px;
+            border: 5px solid var(--border);
+            border-top-color: var(--primary);
             border-radius: 50%;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 24px;
+            animation: spin 0.8s linear infinite;
         }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Cards */
+        /* ── Auth screens ── */
+        .auth-container {
+            max-width: 400px; margin: 40px auto;
+            padding: 32px; background: var(--bg-white);
+            border-radius: 16px; box-shadow: var(--shadow-lg);
+        }
+        .auth-logo { text-align: center; font-size: 48px; margin-bottom: 8px; }
+        .auth-title { text-align: center; font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+        .auth-subtitle { text-align: center; font-size: 14px; color: var(--text-light); margin-bottom: 28px; }
+        .auth-toggle { text-align: center; margin-top: 16px; font-size: 14px; color: var(--text-light); }
+        .auth-toggle a { color: var(--primary); cursor: pointer; font-weight: 600; text-decoration: none; }
+        .auth-toggle a:hover { text-decoration: underline; }
+        .auth-error {
+            background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.3);
+            color: #c0392b; border-radius: 8px; padding: 10px 14px;
+            font-size: 13px; margin-bottom: 16px; display: none;
+        }
+        .auth-error.visible { display: block; }
+
+        /* ── Buttons ── */
+        .btn {
+            padding: 12px 20px; border: none; border-radius: 8px;
+            cursor: pointer; font-size: 14px; font-weight: 600;
+            transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover:not(:disabled) { background: var(--primary-dark); box-shadow: var(--shadow-lg); }
+        .btn-secondary { background: var(--bg-light); color: var(--text-dark); border: 2px solid var(--border); }
+        .btn-secondary:hover:not(:disabled) { background: #eeeeee; }
+        .btn-danger { background: var(--accent); color: white; }
+        .btn-danger:hover:not(:disabled) { background: #e55555; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover:not(:disabled) { background: #45a049; }
+        .btn-sm { padding: 8px 12px; font-size: 12px; }
+        .btn-icon { width: 50px; height: 50px; border-radius: 50%; padding: 0; display: flex; justify-content: center; align-items: center; font-size: 24px; }
+
+        /* ── Cards ── */
         .card {
-            background: var(--bg-white);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-            box-shadow: var(--shadow);
-            transition: all 0.3s ease;
+            background: var(--bg-white); border: 1px solid var(--border);
+            border-radius: 12px; padding: 16px; margin-bottom: 12px;
+            box-shadow: var(--shadow); transition: all 0.3s ease;
         }
+        .card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .card-title { font-size: 18px; font-weight: 600; color: var(--text-dark); }
+        .card-info { font-size: 12px; color: var(--text-light); }
+        .card-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
 
-        .card:hover {
-            box-shadow: var(--shadow-lg);
-            transform: translateY(-2px);
+        /* ── Forms ── */
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; }
+        input[type="text"], input[type="email"], input[type="password"], textarea {
+            width: 100%; padding: 12px; border: 2px solid var(--border);
+            border-radius: 8px; font-size: 14px; font-family: inherit; transition: border-color 0.3s ease;
         }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
+        input:focus, textarea:focus {
+            outline: none; border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(33,150,243,0.1);
         }
-
-        .card-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--text-dark);
-        }
-
-        .card-info {
-            font-size: 12px;
-            color: var(--text-light);
-        }
-
-        .card-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 12px;
-        }
-
-        /* Form Elements */
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 600;
-            font-size: 14px;
-            color: var(--text-dark);
-        }
-
-        input[type="text"],
-        textarea {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            font-size: 14px;
-            font-family: inherit;
-            transition: border-color 0.3s ease;
-        }
-
-        input[type="text"]:focus,
-        textarea:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
-        }
-
-        textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
-
-        .file-input-wrapper {
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
-        }
-
-        input[type="file"] {
-            display: none;
-        }
-
+        textarea { resize: vertical; min-height: 80px; }
+        input[type="file"] { display: none; }
         .file-label {
-            display: block;
-            padding: 10px 16px;
-            background: var(--bg-light);
-            border: 2px dashed var(--primary);
-            border-radius: 8px;
-            cursor: pointer;
-            text-align: center;
-            font-size: 13px;
-            color: var(--primary);
-            transition: all 0.3s ease;
+            display: block; padding: 10px 16px; background: var(--bg-light);
+            border: 2px dashed var(--primary); border-radius: 8px;
+            cursor: pointer; text-align: center; font-size: 13px; color: var(--primary); transition: all 0.3s ease;
         }
+        .file-label:hover { background: rgba(33,150,243,0.05); }
+        .image-preview { margin-top: 12px; text-align: center; }
+        .image-preview img { max-width: 100%; max-height: 200px; border-radius: 8px; box-shadow: var(--shadow); }
 
-        .file-label:hover {
-            background: rgba(33, 150, 243, 0.05);
-        }
-
-        .image-preview {
-            margin-top: 12px;
-            text-align: center;
-        }
-
-        .image-preview img {
-            max-width: 100%;
-            max-height: 200px;
-            border-radius: 8px;
-            box-shadow: var(--shadow);
-        }
-
-        /* Flashcard Learning */
-        .flashcard-container {
-            perspective: 1000px;
-            margin: 40px 0;
-        }
-
+        /* ── Flashcard ── */
+        .flashcard-container { perspective: 1000px; margin: 30px 0; }
         .flashcard {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-            border-radius: 16px;
-            padding: 30px;
-            min-height: 300px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            cursor: pointer;
-            box-shadow: var(--shadow-lg);
-            transition: transform 0.6s;
-            transform-style: preserve-3d;
-            position: relative;
-            user-select: none;
+            color: white; border-radius: 16px; padding: 30px;
+            min-height: 280px; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; text-align: center;
+            cursor: pointer; box-shadow: var(--shadow-lg);
+            transition: background 0.4s ease; position: relative; user-select: none;
         }
-
-        .flashcard.flipped {
-            background: linear-gradient(135deg, var(--accent) 0%, #e55555 100%);
+        .flashcard.flipped { background: linear-gradient(135deg, var(--accent) 0%, #e55555 100%); }
+        .flashcard-image { width: 130px; height: 130px; margin-bottom: 16px; border-radius: 12px; object-fit: cover; }
+        .flashcard-label { font-size: 11px; opacity: 0.8; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        .flashcard-text { font-size: 26px; font-weight: 600; line-height: 1.4; word-wrap: break-word; }
+        .flashcard-comment {
+            font-size: 14px; font-style: italic; opacity: 0.85;
+            margin-top: 12px; padding: 8px 14px;
+            background: rgba(255,255,255,0.15); border-radius: 8px;
+            max-width: 100%; word-wrap: break-word; line-height: 1.5;
         }
+        .flashcard-hint { position: absolute; bottom: 16px; right: 16px; font-size: 11px; opacity: 0.6; }
 
-        .flashcard-image {
-            width: 150px;
-            height: 150px;
-            margin-bottom: 20px;
-            border-radius: 12px;
-            object-fit: cover;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
+        /* ── Progress ── */
+        .progress-bar { height: 8px; background: var(--border); border-radius: 4px; margin: 16px 0; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--success); transition: width 0.3s ease; }
 
-        .flashcard-label {
-            font-size: 12px;
-            opacity: 0.8;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+        .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+        .stat-box { background: var(--bg-light); padding: 14px; border-radius: 8px; text-align: center; }
+        .stat-number { font-size: 22px; font-weight: 600; color: var(--primary); }
+        .stat-label { font-size: 11px; color: var(--text-light); margin-top: 4px; }
 
-        .flashcard-text {
-            font-size: 28px;
-            font-weight: 600;
-            line-height: 1.4;
-            word-wrap: break-word;
-        }
-
-        .flashcard-hint {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            font-size: 11px;
-            opacity: 0.7;
-        }
-
-        .progress-bar {
-            height: 8px;
-            background: var(--border);
-            border-radius: 4px;
-            margin: 20px 0;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: var(--success);
-            transition: width 0.3s ease;
-        }
-
-        .stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin: 20px 0;
-        }
-
-        .stat-box {
-            background: var(--bg-light);
-            padding: 16px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .stat-number {
-            font-size: 24px;
-            font-weight: 600;
-            color: var(--primary);
-        }
-
-        .stat-label {
-            font-size: 12px;
-            color: var(--text-light);
-            margin-top: 4px;
-        }
-
-        /* Modal */
+        /* ── Modals ── */
         .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            align-items: flex-end;
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5); z-index: 1000; align-items: flex-end;
         }
-
-        .modal.active {
-            display: flex;
-        }
-
+        .modal.active { display: flex; }
         .modal-content {
-            background: var(--bg-white);
-            width: 100%;
-            padding: 20px;
-            border-radius: 16px 16px 0 0;
-            max-height: 90vh;
-            overflow-y: auto;
+            background: var(--bg-white); width: 100%; padding: 20px;
+            border-radius: 16px 16px 0 0; max-height: 90vh; overflow-y: auto;
             animation: slideUp 0.3s ease;
         }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .modal-header { font-size: 18px; font-weight: 600; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .modal-header .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-light); }
 
-        @keyframes slideUp {
-            from { transform: translateY(100%); }
-            to { transform: translateY(0); }
+        /* ── Dialog custom ── */
+        .dialog-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5); z-index: 3000;
+            align-items: center; justify-content: center;
         }
+        .dialog-overlay.active { display: flex; }
+        .dialog-box {
+            background: var(--bg-white); border-radius: 16px; padding: 24px;
+            max-width: 320px; width: 90%; box-shadow: var(--shadow-lg); animation: fadeIn 0.2s ease;
+        }
+        .dialog-title { font-size: 17px; font-weight: 700; margin-bottom: 10px; }
+        .dialog-message { color: var(--text-light); margin-bottom: 20px; font-size: 14px; line-height: 1.5; }
+        .dialog-actions { display: flex; gap: 10px; justify-content: flex-end; }
 
-        .modal-header {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+        /* ── Results ── */
+        .results-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 20px 0; }
+        .result-box { background: var(--bg-light); padding: 16px; border-radius: 8px; text-align: center; }
+        .result-number { font-size: 28px; font-weight: 700; }
+        .result-number.correct { color: var(--success); }
+        .result-number.incorrect { color: var(--accent); }
+        .result-number.total { color: var(--primary); }
+        .result-label { font-size: 11px; color: var(--text-light); margin-top: 4px; }
 
-        .modal-header .close-btn {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: var(--text-light);
-        }
+        /* ── SRS badges ── */
+        .srs-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .srs-new { background: rgba(33,150,243,0.15); color: var(--primary); }
+        .srs-learning { background: rgba(255,193,7,0.2); color: #f57f17; }
+        .srs-known { background: rgba(76,175,80,0.15); color: var(--success); }
 
-        .list-item {
-            background: var(--bg-white);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        /* ── Saving indicator ── */
+        #savingIndicator {
+            position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.75); color: white;
+            padding: 8px 18px; border-radius: 20px; font-size: 13px;
+            opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 500;
         }
+        #savingIndicator.visible { opacity: 1; }
 
-        .list-item-info {
-            flex: 1;
-        }
+        .action-buttons { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+        .action-buttons .btn { flex: 1; min-width: 120px; justify-content: center; }
 
-        .list-item-name {
-            font-weight: 600;
-            color: var(--text-dark);
-            margin-bottom: 4px;
-        }
-
-        .list-item-count {
-            font-size: 12px;
-            color: var(--text-light);
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--text-light);
-        }
-
-        .empty-state-icon {
-            font-size: 48px;
-            margin-bottom: 16px;
-        }
-
-        .empty-state-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--text-dark);
-            margin-bottom: 8px;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 12px;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
-
-        .action-buttons .btn {
-            flex: 1;
-            min-width: 120px;
-            justify-content: center;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .badge-correct {
-            background: rgba(76, 175, 80, 0.2);
-            color: var(--success);
-        }
-
-        .badge-incorrect {
-            background: rgba(255, 107, 107, 0.2);
-            color: var(--accent);
-        }
-
-        .badge-learning {
-            background: rgba(33, 150, 243, 0.2);
-            color: var(--primary);
-        }
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-light); }
+        .empty-state-icon { font-size: 48px; margin-bottom: 16px; }
+        .empty-state-title { font-size: 18px; font-weight: 600; color: var(--text-dark); margin-bottom: 8px; }
 
         @media (max-width: 600px) {
-            .header h1 {
-                font-size: 20px;
-            }
-
-            .content {
-                padding: 16px;
-            }
-
-            .flashcard {
-                min-height: 250px;
-                padding: 20px;
-            }
-
-            .flashcard-text {
-                font-size: 24px;
-            }
-
-            .stats {
-                grid-template-columns: 1fr;
-            }
+            .header h1 { font-size: 20px; }
+            .content { padding: 16px; }
+            .flashcard { min-height: 240px; padding: 20px; }
+            .flashcard-text { font-size: 22px; }
+            .stats { grid-template-columns: 1fr 1fr; }
+            .results-grid { grid-template-columns: 1fr 1fr; }
+            .auth-container { margin: 20px 16px; padding: 24px; }
         }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Header -->
-        <div class="header">
-            <h1>📚 FlashCards</h1>
-            <div class="header-actions">
-                <button class="btn btn-icon btn-secondary" onclick="toggleSettings()" title="Paramètres">⚙️</button>
-            </div>
+
+<!-- Loader global -->
+<div id="globalLoader">
+    <div class="spinner"></div>
+    <div style="color:var(--text-light);font-size:14px;">Chargement…</div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     AUTH SCREENS (hors app-container)
+═════════════════════════════════════════════ -->
+<div id="authWrapper" style="display:none; background:var(--bg-light); min-height:100vh;">
+
+    <!-- Connexion -->
+    <div id="loginScreen" class="auth-container" style="display:none;">
+        <div class="auth-logo">📚</div>
+        <div class="auth-title">FlashCards</div>
+        <div class="auth-subtitle">Connectez-vous pour accéder à vos listes</div>
+        <div id="loginError" class="auth-error"></div>
+        <div class="form-group">
+            <label for="loginEmail">Adresse email</label>
+            <input type="email" id="loginEmail" placeholder="vous@exemple.com" autocomplete="email">
         </div>
+        <div class="form-group">
+            <label for="loginPassword">Mot de passe</label>
+            <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button class="btn btn-primary" id="loginBtn" onclick="doLogin()" style="width:100%;">Se connecter</button>
+        <div class="auth-toggle">Pas encore de compte ? <a onclick="showRegister()">Créer un compte</a></div>
+        <div class="auth-toggle" style="margin-top:8px;"><a onclick="doResetPassword()" style="color:var(--text-light);font-weight:400;">Mot de passe oublié ?</a></div>
+    </div>
 
-        <!-- Content -->
-        <div class="content">
-            <!-- Écran Accueil / Listes -->
-            <div id="homeScreen" class="screen active">
-                <div style="margin-bottom: 20px;">
-                    <h2 style="margin-bottom: 16px; font-size: 20px;">Mes Listes de Flashcards</h2>
-                </div>
+    <!-- Inscription -->
+    <div id="registerScreen" class="auth-container" style="display:none;">
+        <div class="auth-logo">📚</div>
+        <div class="auth-title">Créer un compte</div>
+        <div class="auth-subtitle">Gratuit, vos données synchronisées partout</div>
+        <div id="registerError" class="auth-error"></div>
+        <div class="form-group">
+            <label for="registerEmail">Adresse email</label>
+            <input type="email" id="registerEmail" placeholder="vous@exemple.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+            <label for="registerPassword">Mot de passe</label>
+            <input type="password" id="registerPassword" placeholder="Minimum 6 caractères" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+            <label for="registerPasswordConfirm">Confirmer le mot de passe</label>
+            <input type="password" id="registerPasswordConfirm" placeholder="••••••••" autocomplete="new-password">
+        </div>
+        <button class="btn btn-primary" id="registerBtn" onclick="doRegister()" style="width:100%;">Créer mon compte</button>
+        <div class="auth-toggle">Déjà un compte ? <a onclick="showLogin()">Se connecter</a></div>
+    </div>
+</div>
 
-                <div id="listContainer"></div>
-
-                <button class="btn btn-primary btn-icon" onclick="showCreateListModal()" style="position: fixed; bottom: 30px; right: 20px; box-shadow: var(--shadow-lg);" title="Créer une nouvelle liste">
-                    <span style="font-size: 28px;">+</span>
-                </button>
-            </div>
-
-            <!-- Écran Modification/Gestion d'une liste -->
-            <div id="editListScreen" class="screen">
-                <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
-                    <h2 id="editListTitle" style="margin: 0; font-size: 20px;"></h2>
-                    <button class="btn btn-secondary btn-sm" onclick="showHomeScreen()">← Retour</button>
-                </div>
-
-                <div id="cardsInListContainer"></div>
-
-                <button class="btn btn-primary" onclick="showAddCardModal()" style="width: 100%; margin-top: 20px; justify-content: center;">
-                    + Ajouter une Carte
-                </button>
-            </div>
-
-            <!-- Écran Apprentissage -->
-            <div id="learningScreen" class="screen">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2 id="learningListTitle" style="margin: 0; font-size: 18px;"></h2>
-                    <button class="btn btn-secondary btn-sm" onclick="endLearning()">✕ Quitter</button>
-                </div>
-
-                <div class="stats">
-                    <div class="stat-box">
-                        <div class="stat-number" id="cardIndex">1</div>
-                        <div class="stat-label">Carte actuelle</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-number" id="totalCards">0</div>
-                        <div class="stat-label">Total</div>
-                    </div>
-                </div>
-
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
-                </div>
-
-                <div class="flashcard-container">
-                    <div class="flashcard" id="flashcard" onclick="flipCard()">
-                        <div class="flashcard-label">RECTO</div>
-                        <img id="frontImage" class="flashcard-image" style="display: none;" />
-                        <div class="flashcard-text" id="cardFront"></div>
-                        <div class="flashcard-hint">Cliquez pour retourner</div>
-                    </div>
-                </div>
-
-                <div class="action-buttons">
-                    <button class="btn btn-danger" onclick="markCardIncorrect()">✕ Oublié</button>
-                    <button class="btn btn-success" onclick="markCardCorrect()">✓ Connu</button>
-                </div>
-
-                <div class="action-buttons">
-                    <button class="btn btn-secondary" onclick="previousCard()" style="flex: 1;">← Précédent</button>
-                    <button class="btn btn-secondary" onclick="nextCard()" style="flex: 1;">Suivant →</button>
-                </div>
-            </div>
-
-            <!-- Settings Screen -->
-            <div id="settingsScreen" class="screen">
-                <h2 style="margin-bottom: 20px; font-size: 20px;">Paramètres</h2>
-                <button class="btn btn-secondary" onclick="toggleSettings()" style="width: 100%; margin-bottom: 12px;">← Retour</button>
-                
-                <div style="margin-bottom: 12px;">
-                    <label class="file-label" for="importFile" style="margin-bottom: 0;">
-                        📥 Importer des listes (JSON)
-                    </label>
-                    <input type="file" id="importFile" accept=".json" style="display: none;">
-                </div>
-                
-                <button class="btn btn-primary" onclick="exportData()" style="width: 100%; margin-bottom: 12px;">📤 Exporter les listes</button>
-                <button class="btn btn-danger" onclick="clearAllData()" style="width: 100%;">🗑️ Supprimer toutes les données</button>
-            </div>
+<!-- ════════════════════════════════════════════
+     APP PRINCIPALE
+═════════════════════════════════════════════ -->
+<div class="app-container" id="mainApp" style="display:none;">
+    <div class="header">
+        <h1>📚 FlashCards</h1>
+        <div class="header-actions">
+            <span class="header-user" id="headerUserEmail"></span>
+            <button class="btn btn-icon btn-secondary" onclick="toggleSettings()" title="Paramètres">⚙️</button>
         </div>
     </div>
 
-    <!-- Modals -->
-    <div id="createListModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <span>Créer une nouvelle liste</span>
-                <button class="close-btn" onclick="closeCreateListModal()">✕</button>
+    <div class="content">
+
+        <!-- Accueil -->
+        <div id="homeScreen" class="screen active">
+            <h2 style="margin-bottom:16px;font-size:20px;">Mes Listes de Flashcards</h2>
+            <div id="listContainer"></div>
+            <button class="btn btn-primary btn-icon" onclick="showCreateListModal()"
+                style="position:fixed;bottom:30px;right:20px;box-shadow:var(--shadow-lg);" title="Nouvelle liste">
+                <span style="font-size:28px;">+</span>
+            </button>
+        </div>
+
+        <!-- Édition liste -->
+        <div id="editListScreen" class="screen">
+            <div style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;">
+                <h2 id="editListTitle" style="margin:0;font-size:20px;"></h2>
+                <button class="btn btn-secondary btn-sm" onclick="showHomeScreen()">← Retour</button>
             </div>
-            <div class="form-group">
-                <label for="listName">Nom de la liste</label>
-                <input type="text" id="listName" placeholder="Ex: Vocabulaire Espagnol" required>
+            <div id="cardsInListContainer"></div>
+            <button class="btn btn-primary" onclick="showAddCardModal()" style="width:100%;margin-top:20px;justify-content:center;">
+                + Ajouter une Carte
+            </button>
+        </div>
+
+        <!-- Apprentissage -->
+        <div id="learningScreen" class="screen">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h2 id="learningListTitle" style="margin:0;font-size:18px;"></h2>
+                <button class="btn btn-secondary btn-sm" onclick="endLearning()">✕ Quitter</button>
             </div>
-            <button class="btn btn-primary" onclick="createList()" style="width: 100%;">Créer la liste</button>
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-number" id="cardIndex">1</div>
+                    <div class="stat-label">Carte actuelle</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="totalCards">0</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="sessionCorrect" style="color:var(--success)">0</div>
+                    <div class="stat-label">Connus ✓</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="sessionIncorrect" style="color:var(--accent)">0</div>
+                    <div class="stat-label">Oubliés ✕</div>
+                </div>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="flashcard-container">
+                <div class="flashcard" id="flashcard" onclick="flipCard()">
+                    <div class="flashcard-label" id="flashcardLabel">RECTO</div>
+                    <img id="frontImage" class="flashcard-image" style="display:none;" alt="">
+                    <div class="flashcard-text" id="cardFront"></div>
+                    <div class="flashcard-comment" id="cardComment" style="display:none;"></div>
+                    <div class="flashcard-hint">Cliquez pour retourner</div>
+                </div>
+            </div>
+            <div class="action-buttons">
+                <button class="btn btn-danger" onclick="markCardIncorrect()">✕ Oublié</button>
+                <button class="btn btn-success" onclick="markCardCorrect()">✓ Connu</button>
+            </div>
+            <div class="action-buttons">
+                <button class="btn btn-secondary" onclick="previousCard()" style="flex:1;">← Précédent</button>
+                <button class="btn btn-secondary" onclick="nextCard()" style="flex:1;">Suivant →</button>
+            </div>
+        </div>
+
+        <!-- Résultats -->
+        <div id="resultsScreen" class="screen">
+            <h2 style="margin-bottom:8px;font-size:22px;text-align:center;">🎉 Session terminée !</h2>
+            <p style="text-align:center;color:var(--text-light);margin-bottom:20px;">Voici votre bilan</p>
+            <div class="results-grid">
+                <div class="result-box"><div class="result-number total" id="resultTotal">0</div><div class="result-label">Vues</div></div>
+                <div class="result-box"><div class="result-number correct" id="resultCorrect">0</div><div class="result-label">Connues ✓</div></div>
+                <div class="result-box"><div class="result-number incorrect" id="resultIncorrect">0</div><div class="result-label">Oubliées ✕</div></div>
+            </div>
+            <div id="resultScore" style="text-align:center;font-size:18px;margin:16px 0;font-weight:600;"></div>
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="restartSession()">🔄 Recommencer</button>
+                <button class="btn btn-secondary" onclick="showHomeScreen()">🏠 Accueil</button>
+            </div>
+            <div id="toReviewList" style="margin-top:24px;"></div>
+        </div>
+
+        <!-- Paramètres -->
+        <div id="settingsScreen" class="screen">
+            <h2 style="margin-bottom:20px;font-size:20px;">Paramètres</h2>
+            <button class="btn btn-secondary" onclick="toggleSettings()" style="width:100%;margin-bottom:16px;">← Retour</button>
+
+            <div style="background:var(--bg-light);border-radius:12px;padding:16px;margin-bottom:16px;">
+                <div style="font-size:13px;color:var(--text-light);margin-bottom:4px;">Connecté en tant que</div>
+                <div style="font-weight:600;font-size:14px;" id="settingsUserEmail"></div>
+            </div>
+
+            <div style="margin-bottom:12px;">
+                <label class="file-label" for="importFile">📥 Importer des listes (JSON)</label>
+                <input type="file" id="importFile" accept=".json">
+            </div>
+            <button class="btn btn-primary" onclick="exportData()" style="width:100%;margin-bottom:12px;">📤 Exporter les listes</button>
+            <button class="btn btn-danger" onclick="clearAllData()" style="width:100%;margin-bottom:12px;">🗑️ Supprimer toutes mes données</button>
+            <button class="btn btn-secondary" onclick="doLogout()" style="width:100%;">🚪 Se déconnecter</button>
         </div>
     </div>
+</div>
 
-    <div id="addCardModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <span>Ajouter une carte</span>
-                <button class="close-btn" onclick="closeAddCardModal()">✕</button>
-            </div>
-
-            <div class="form-group">
-                <label for="cardFrontText">Mot/Texte Recto *</label>
-                <textarea id="cardFrontText" placeholder="Entrez le mot ou le texte à mémoriser" required></textarea>
-            </div>
-
-            <div class="form-group">
-                <label>Image Recto (optionnel)</label>
-                <div class="file-input-wrapper">
-                    <label class="file-label" for="cardFrontImage">
-                        📷 Cliquez pour ajouter une image
-                    </label>
-                    <input type="file" id="cardFrontImage" accept="image/*">
-                </div>
-                <div id="frontImagePreview" class="image-preview"></div>
-            </div>
-
-            <div class="form-group">
-                <label for="cardBackText">Mot/Texte Verso *</label>
-                <textarea id="cardBackText" placeholder="Entrez la traduction ou la réponse" required></textarea>
-            </div>
-
-            <div class="form-group">
-                <label>Image Verso (optionnel)</label>
-                <div class="file-input-wrapper">
-                    <label class="file-label" for="cardBackImage">
-                        📷 Cliquez pour ajouter une image
-                    </label>
-                    <input type="file" id="cardBackImage" accept="image/*">
-                </div>
-                <div id="backImagePreview" class="image-preview"></div>
-            </div>
-
-            <button class="btn btn-primary" onclick="addCard()" style="width: 100%;">Ajouter la carte</button>
+<!-- ════════ MODALS ════════ -->
+<div id="createListModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span>Créer une nouvelle liste</span>
+            <button class="close-btn" onclick="closeCreateListModal()">✕</button>
         </div>
-    </div>
-
-    <div id="editCardModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <span>Modifier la carte</span>
-                <button class="close-btn" onclick="closeEditCardModal()">✕</button>
-            </div>
-
-            <div class="form-group">
-                <label for="editCardFrontText">Mot/Texte Recto *</label>
-                <textarea id="editCardFrontText" required></textarea>
-            </div>
-
-            <div class="form-group">
-                <label>Image Recto (optionnel)</label>
-                <div class="file-input-wrapper">
-                    <label class="file-label" for="editCardFrontImage">
-                        📷 Cliquez pour changer l'image
-                    </label>
-                    <input type="file" id="editCardFrontImage" accept="image/*">
-                </div>
-                <div id="editFrontImagePreview" class="image-preview"></div>
-            </div>
-
-            <div class="form-group">
-                <label for="editCardBackText">Mot/Texte Verso *</label>
-                <textarea id="editCardBackText" required></textarea>
-            </div>
-
-            <div class="form-group">
-                <label>Image Verso (optionnel)</label>
-                <div class="file-input-wrapper">
-                    <label class="file-label" for="editCardBackImage">
-                        📷 Cliquez pour changer l'image
-                    </label>
-                    <input type="file" id="editCardBackImage" accept="image/*">
-                </div>
-                <div id="editBackImagePreview" class="image-preview"></div>
-            </div>
-
-            <button class="btn btn-primary" onclick="updateCard()" style="width: 100%; margin-bottom: 12px;">Modifier la carte</button>
-            <button class="btn btn-danger" onclick="deleteCard()" style="width: 100%;">Supprimer la carte</button>
+        <div class="form-group">
+            <label for="listName">Nom de la liste</label>
+            <input type="text" id="listName" placeholder="Ex: Vocabulaire Espagnol">
         </div>
+        <button class="btn btn-primary" onclick="createList()" style="width:100%;">Créer la liste</button>
     </div>
+</div>
 
-    <script>
-        // Data Management
-        class FlashcardApp {
-            constructor() {
-                this.data = this.loadData();
-                this.currentListId = null;
-                this.currentCardIndex = 0;
-                this.isFlipped = false;
-                this.cardStats = {}; // Track card learning progress
-                this.editingCardId = null;
-            }
+<div id="addCardModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span>Ajouter une carte</span>
+            <button class="close-btn" onclick="closeAddCardModal()">✕</button>
+        </div>
+        <div class="form-group">
+            <label for="cardFrontText">Mot/Texte Recto *</label>
+            <textarea id="cardFrontText" placeholder="Le mot ou texte principal"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="cardFrontComment">Commentaire Recto <span style="font-weight:400;color:var(--text-light)">(optionnel)</span></label>
+            <textarea id="cardFrontComment" placeholder="Ex: genre, prononciation, contexte…" style="min-height:56px;font-style:italic;"></textarea>
+        </div>
+        <div class="form-group">
+            <label>Image Recto (optionnel)</label>
+            <label class="file-label" for="cardFrontImage">📷 Ajouter une image</label>
+            <input type="file" id="cardFrontImage" accept="image/*">
+            <div id="frontImagePreview" class="image-preview"></div>
+        </div>
+        <div class="form-group">
+            <label for="cardBackText">Mot/Texte Verso *</label>
+            <textarea id="cardBackText" placeholder="La traduction ou réponse"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="cardBackComment">Commentaire Verso <span style="font-weight:400;color:var(--text-light)">(optionnel)</span></label>
+            <textarea id="cardBackComment" placeholder="Ex: synonymes, exemple de phrase…" style="min-height:56px;font-style:italic;"></textarea>
+        </div>
+        <div class="form-group">
+            <label>Image Verso (optionnel)</label>
+            <label class="file-label" for="cardBackImage">📷 Ajouter une image</label>
+            <input type="file" id="cardBackImage" accept="image/*">
+            <div id="backImagePreview" class="image-preview"></div>
+        </div>
+        <button class="btn btn-primary" onclick="addCard()" style="width:100%;">Ajouter la carte</button>
+    </div>
+</div>
 
-            loadData() {
-                const saved = localStorage.getItem('flashcardData');
-                return saved ? JSON.parse(saved) : { lists: [] };
-            }
+<div id="editCardModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span>Modifier la carte</span>
+            <button class="close-btn" onclick="closeEditCardModal()">✕</button>
+        </div>
+        <div class="form-group">
+            <label for="editCardFrontText">Mot/Texte Recto *</label>
+            <textarea id="editCardFrontText"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="editCardFrontComment">Commentaire Recto <span style="font-weight:400;color:var(--text-light)">(optionnel)</span></label>
+            <textarea id="editCardFrontComment" style="min-height:56px;font-style:italic;"></textarea>
+        </div>
+        <div class="form-group">
+            <label>Image Recto (optionnel)</label>
+            <label class="file-label" for="editCardFrontImage">📷 Changer l'image</label>
+            <input type="file" id="editCardFrontImage" accept="image/*">
+            <div id="editFrontImagePreview" class="image-preview"></div>
+        </div>
+        <div class="form-group">
+            <label for="editCardBackText">Mot/Texte Verso *</label>
+            <textarea id="editCardBackText"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="editCardBackComment">Commentaire Verso <span style="font-weight:400;color:var(--text-light)">(optionnel)</span></label>
+            <textarea id="editCardBackComment" style="min-height:56px;font-style:italic;"></textarea>
+        </div>
+        <div class="form-group">
+            <label>Image Verso (optionnel)</label>
+            <label class="file-label" for="editCardBackImage">📷 Changer l'image</label>
+            <input type="file" id="editCardBackImage" accept="image/*">
+            <div id="editBackImagePreview" class="image-preview"></div>
+        </div>
+        <button class="btn btn-primary" onclick="updateCard()" style="width:100%;margin-bottom:12px;">Modifier la carte</button>
+        <button class="btn btn-danger" onclick="confirmDeleteCard()" style="width:100%;">Supprimer la carte</button>
+    </div>
+</div>
 
-            saveData() {
-                localStorage.setItem('flashcardData', JSON.stringify(this.data));
-            }
+<!-- Dialog custom -->
+<div id="dialogOverlay" class="dialog-overlay">
+    <div class="dialog-box">
+        <div class="dialog-title" id="dialogTitle"></div>
+        <div class="dialog-message" id="dialogMessage"></div>
+        <div class="dialog-actions" id="dialogActions"></div>
+    </div>
+</div>
 
-            createList(name) {
-                const list = {
-                    id: Date.now(),
-                    name: name,
-                    cards: [],
-                    createdAt: new Date().toISOString()
-                };
-                this.data.lists.push(list);
-                this.saveData();
-                return list.id;
-            }
+<!-- Indicateur de sauvegarde -->
+<div id="savingIndicator">💾 Sauvegarde…</div>
 
-            deleteList(listId) {
-                this.data.lists = this.data.lists.filter(l => l.id !== listId);
-                this.saveData();
-            }
+<!-- ════════════════════════════════════════════
+     FIREBASE + APP SCRIPT
+═════════════════════════════════════════════ -->
+<script type="module">
+import { initializeApp }        from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+         signOut, onAuthStateChanged, sendPasswordResetEmail }
+    from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc,
+         collection, query, onSnapshot, serverTimestamp, writeBatch }
+    from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
-            updateListName(listId, name) {
-                const list = this.data.lists.find(l => l.id === listId);
-                if (list) {
-                    list.name = name;
-                    this.saveData();
-                }
-            }
+// ── Config Firebase ──────────────────────────────────────────
+const firebaseConfig = {
+    apiKey: "AIzaSyD2YcojERxTnmMLY30Xnvde2uozu0X4UOw",
+    authDomain: "flashcard-app-2a3a5.firebaseapp.com",
+    projectId: "flashcard-app-2a3a5",
+    storageBucket: "flashcard-app-2a3a5.firebasestorage.app",
+    messagingSenderId: "886129894816",
+    appId: "1:886129894816:web:1a1a1357a09d472d09b0c5"
+};
 
-            getList(listId) {
-                return this.data.lists.find(l => l.id === listId);
-            }
+const firebaseApp = initializeApp(firebaseConfig);
+const auth        = getAuth(firebaseApp);
+const db          = getFirestore(firebaseApp);
 
-            addCard(listId, card) {
-                const list = this.getList(listId);
-                if (list) {
-                    const newCard = {
-                        id: Date.now(),
-                        front: card.front,
-                        frontImage: card.frontImage,
-                        back: card.back,
-                        backImage: card.backImage,
-                        createdAt: new Date().toISOString()
-                    };
-                    list.cards.push(newCard);
-                    this.saveData();
-                    return newCard.id;
-                }
-            }
+// ── État global ──────────────────────────────────────────────
+let currentUser   = null;
+let localData     = { lists: [] };   // cache local des données
+let unsubscribe   = null;            // listener Firestore
+let currentListId = null;
+let currentCardIndex = 0;
+let isFlipped     = false;
+let editingCardId = null;
+let sessionCorrect = 0;
+let sessionIncorrect = 0;
+let sessionResults = [];
+let savingTimer   = null;
 
-            updateCard(listId, cardId, cardData) {
-                const list = this.getList(listId);
-                if (list) {
-                    const card = list.cards.find(c => c.id === cardId);
-                    if (card) {
-                        Object.assign(card, cardData);
-                        this.saveData();
-                    }
-                }
-            }
+// ── Utilitaires DOM sécurisés ────────────────────────────────
+function setTextSafe(el, text) {
+    if (typeof el === 'string') el = document.getElementById(el);
+    if (el) el.textContent = String(text ?? '');
+}
 
-            deleteCard(listId, cardId) {
-                const list = this.getList(listId);
-                if (list) {
-                    list.cards = list.cards.filter(c => c.id !== cardId);
-                    this.saveData();
-                }
-            }
+function createEl(tag, props = {}, children = []) {
+    const el = document.createElement(tag);
+    for (const [k, v] of Object.entries(props)) {
+        if (k === 'className') el.className = v;
+        else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+        else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2).toLowerCase(), v);
+        else el.setAttribute(k, v);
+    }
+    for (const child of children) {
+        if (child === null || child === undefined) continue;
+        el.appendChild(typeof child === 'string' ? document.createTextNode(child) : child);
+    }
+    return el;
+}
 
-            clearAllData() {
-                if (confirm('⚠️ Êtes-vous sûr ? Cette action est irréversible.')) {
-                    this.data = { lists: [] };
-                    this.cardStats = {};
-                    this.saveData();
-                    localStorage.removeItem('cardStats');
-                    showHomeScreen();
-                    renderLists();
-                }
-            }
-        }
+function generateId() {
+    return crypto.randomUUID ? crypto.randomUUID()
+        : Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
 
-        const app = new FlashcardApp();
+// ── Dialog / Alert ───────────────────────────────────────────
+function showAlert(title, message, onOk) {
+    setTextSafe('dialogTitle', title);
+    setTextSafe('dialogMessage', message);
+    const actions = document.getElementById('dialogActions');
+    actions.innerHTML = '';
+    actions.appendChild(createEl('button', { className: 'btn btn-primary', onClick: () => { closeDialog(); onOk?.(); } }, ['OK']));
+    document.getElementById('dialogOverlay').classList.add('active');
+}
 
-        // UI Functions
-        function showScreen(screenId) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(screenId).classList.add('active');
-        }
+function showConfirm(title, message, onConfirm, onCancel) {
+    setTextSafe('dialogTitle', title);
+    setTextSafe('dialogMessage', message);
+    const actions = document.getElementById('dialogActions');
+    actions.innerHTML = '';
+    actions.appendChild(createEl('button', { className: 'btn btn-secondary', onClick: () => { closeDialog(); onCancel?.(); } }, ['Annuler']));
+    actions.appendChild(createEl('button', { className: 'btn btn-danger',    onClick: () => { closeDialog(); onConfirm?.(); } }, ['Confirmer']));
+    document.getElementById('dialogOverlay').classList.add('active');
+}
 
-        function showHomeScreen() {
-            showScreen('homeScreen');
-            renderLists();
-            app.currentListId = null;
-        }
+function closeDialog() { document.getElementById('dialogOverlay').classList.remove('active'); }
+window.closeDialog = closeDialog;
 
-        function renderLists() {
-            const container = document.getElementById('listContainer');
-            
-            if (app.data.lists.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📋</div>
-                        <div class="empty-state-title">Aucune liste créée</div>
-                        <p>Cliquez sur le bouton + pour créer votre première liste de flashcards</p>
-                    </div>
-                `;
-                return;
-            }
+// ── Indicateur sauvegarde ────────────────────────────────────
+function showSaving() {
+    const el = document.getElementById('savingIndicator');
+    el.classList.add('visible');
+    clearTimeout(savingTimer);
+    savingTimer = setTimeout(() => el.classList.remove('visible'), 1800);
+}
 
-            container.innerHTML = app.data.lists.map(list => `
-                <div class="card">
-                    <div class="card-header">
-                        <div>
-                            <div class="card-title">${escapeHtml(list.name)}</div>
-                            <div class="card-info">${list.cards.length} carte${list.cards.length !== 1 ? 's' : ''}</div>
-                        </div>
-                    </div>
-                    <div class="card-actions">
-                        <button class="btn btn-primary" onclick="startLearning(${list.id})">🎓 Apprendre</button>
-                        <button class="btn btn-secondary" onclick="editList(${list.id})">✏️ Modifier</button>
-                        <button class="btn btn-danger btn-sm" onclick="deleteListConfirm(${list.id})">🗑️ Supprimer</button>
-                    </div>
-                </div>
-            `).join('');
-        }
+// ── Firestore helpers ────────────────────────────────────────
+function userListsRef() {
+    return collection(db, 'users', currentUser.uid, 'lists');
+}
+function listDocRef(listId) {
+    return doc(db, 'users', currentUser.uid, 'lists', listId);
+}
 
-        function editList(listId) {
-            app.currentListId = listId;
-            const list = app.getList(listId);
-            document.getElementById('editListTitle').textContent = escapeHtml(list.name);
-            renderCardsInList();
-            showScreen('editListScreen');
-        }
+// Sauvegarde une liste complète dans Firestore
+async function saveListToFirestore(list) {
+    showSaving();
+    try {
+        await setDoc(listDocRef(list.id), {
+            name:      list.name,
+            cards:     list.cards,
+            createdAt: list.createdAt,
+            updatedAt: new Date().toISOString()
+        });
+    } catch(e) {
+        console.error('Erreur Firestore:', e);
+        showAlert('❌ Erreur de sauvegarde', 'Impossible de sauvegarder : ' + e.message);
+    }
+}
 
-        function renderCardsInList() {
-            const list = app.getList(app.currentListId);
-            const container = document.getElementById('cardsInListContainer');
+async function deleteListFromFirestore(listId) {
+    showSaving();
+    try { await deleteDoc(listDocRef(listId)); }
+    catch(e) { console.error('Erreur suppression:', e); }
+}
 
-            if (!list || list.cards.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">🃏</div>
-                        <div class="empty-state-title">Aucune carte</div>
-                        <p>Créez votre première carte de flashcard</p>
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = list.cards.map(card => `
-                <div class="card">
-                    <div class="card-header">
-                        <div style="flex: 1;">
-                            <div class="card-title">${escapeHtml(card.front)}</div>
-                            <div class="card-info">→ ${escapeHtml(card.back)}</div>
-                        </div>
-                    </div>
-                    <div class="card-actions">
-                        <button class="btn btn-secondary btn-sm" onclick="openEditCardModal(${card.id})">Modifier</button>
-                        <button class="btn btn-danger btn-sm" onclick="deleteCardConfirm(${card.id})">Supprimer</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function startLearning(listId) {
-            const list = app.getList(listId);
-            if (!list || list.cards.length === 0) {
-                alert('⚠️ Cette liste ne contient pas de cartes !');
-                return;
-            }
-
-            app.currentListId = listId;
-            app.currentCardIndex = 0;
-            app.isFlipped = false;
-
-            document.getElementById('learningListTitle').textContent = escapeHtml(list.name);
-            document.getElementById('totalCards').textContent = list.cards.length;
-
-            displayCard();
-            showScreen('learningScreen');
-        }
-
-        function displayCard() {
-            const list = app.getList(app.currentListId);
-            const card = list.cards[app.currentCardIndex];
-
-            const flashcardEl = document.getElementById('flashcard');
-            flashcardEl.classList.remove('flipped');
-            app.isFlipped = false;
-
-            document.getElementById('cardIndex').textContent = app.currentCardIndex + 1;
-            document.getElementById('cardFront').textContent = escapeHtml(card.front);
-
-            const frontImageEl = document.getElementById('frontImage');
-            if (card.frontImage) {
-                frontImageEl.src = card.frontImage;
-                frontImageEl.style.display = 'block';
-            } else {
-                frontImageEl.style.display = 'none';
-            }
-
-            const progress = ((app.currentCardIndex + 1) / list.cards.length) * 100;
-            document.getElementById('progressFill').style.width = progress + '%';
-        }
-
-        function flipCard() {
-            const list = app.getList(app.currentListId);
-            const card = list.cards[app.currentCardIndex];
-            const flashcardEl = document.getElementById('flashcard');
-
-            app.isFlipped = !app.isFlipped;
-
-            if (app.isFlipped) {
-                flashcardEl.classList.add('flipped');
-                document.querySelector('.flashcard-label').textContent = 'VERSO';
-                document.getElementById('cardFront').textContent = escapeHtml(card.back);
-
-                const frontImageEl = document.getElementById('frontImage');
-                if (card.backImage) {
-                    frontImageEl.src = card.backImage;
-                    frontImageEl.style.display = 'block';
-                } else {
-                    frontImageEl.style.display = 'none';
-                }
-            } else {
-                flashcardEl.classList.remove('flipped');
-                document.querySelector('.flashcard-label').textContent = 'RECTO';
-                document.getElementById('cardFront').textContent = escapeHtml(card.front);
-
-                const frontImageEl = document.getElementById('frontImage');
-                if (card.frontImage) {
-                    frontImageEl.src = card.frontImage;
-                    frontImageEl.style.display = 'block';
-                } else {
-                    frontImageEl.style.display = 'none';
-                }
-            }
-        }
-
-        function nextCard() {
-            const list = app.getList(app.currentListId);
-            if (app.currentCardIndex < list.cards.length - 1) {
-                app.currentCardIndex++;
-                displayCard();
-            }
-        }
-
-        function previousCard() {
-            if (app.currentCardIndex > 0) {
-                app.currentCardIndex--;
-                displayCard();
-            }
-        }
-
-        function markCardCorrect() {
-            const list = app.getList(app.currentListId);
-            const card = list.cards[app.currentCardIndex];
-            console.log('Marqué comme connu:', escapeHtml(card.front));
-            nextCard();
-        }
-
-        function markCardIncorrect() {
-            const list = app.getList(app.currentListId);
-            const card = list.cards[app.currentCardIndex];
-            console.log('Marqué comme oublié:', escapeHtml(card.front));
-            nextCard();
-        }
-
-        function endLearning() {
-            showHomeScreen();
-        }
-
-        // Modal Functions
-        function showCreateListModal() {
-            document.getElementById('createListModal').classList.add('active');
-            document.getElementById('listName').focus();
-        }
-
-        function closeCreateListModal() {
-            document.getElementById('createListModal').classList.remove('active');
-            document.getElementById('listName').value = '';
-        }
-
-        function createList() {
-            const name = document.getElementById('listName').value.trim();
-            if (!name) {
-                alert('⚠️ Veuillez entrer un nom pour la liste');
-                return;
-            }
-            app.createList(name);
-            closeCreateListModal();
+// Écoute en temps réel les listes de l'utilisateur
+function subscribeToLists() {
+    if (unsubscribe) unsubscribe();
+    const q = query(userListsRef());
+    unsubscribe = onSnapshot(q, (snapshot) => {
+        localData.lists = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        // Si on est sur l'écran d'accueil, on rafraîchit
+        if (document.getElementById('homeScreen').classList.contains('active')) {
             renderLists();
         }
+    }, (err) => {
+        console.error('Erreur snapshot:', err);
+    });
+}
 
-        function deleteListConfirm(listId) {
-            const list = app.getList(listId);
-            if (confirm(`Êtes-vous sûr de vouloir supprimer la liste "${escapeHtml(list.name)}" et ses cartes ?`)) {
-                app.deleteList(listId);
-                renderLists();
-            }
-        }
+// ── AUTH ─────────────────────────────────────────────────────
+function showAuthError(screenId, msg) {
+    const el = document.getElementById(screenId);
+    setTextSafe(el, msg);
+    el.classList.add('visible');
+}
+function clearAuthError(screenId) {
+    const el = document.getElementById(screenId);
+    el.classList.remove('visible');
+}
 
-        function showAddCardModal() {
-            document.getElementById('addCardModal').classList.add('active');
-            clearCardForm();
-            document.getElementById('cardFrontText').focus();
-        }
+function setAuthLoading(btnId, loading) {
+    const btn = document.getElementById(btnId);
+    btn.disabled = loading;
+    btn.textContent = loading ? '…' : (btnId === 'loginBtn' ? 'Se connecter' : 'Créer mon compte');
+}
 
-        function closeAddCardModal() {
-            document.getElementById('addCardModal').classList.remove('active');
-            clearCardForm();
-        }
+window.showLogin = function() {
+    document.getElementById('registerScreen').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'block';
+};
+window.showRegister = function() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('registerScreen').style.display = 'block';
+};
 
-        function clearCardForm() {
-            document.getElementById('cardFrontText').value = '';
-            document.getElementById('cardBackText').value = '';
-            document.getElementById('cardFrontImage').value = '';
-            document.getElementById('cardBackImage').value = '';
-            document.getElementById('frontImagePreview').innerHTML = '';
-            document.getElementById('backImagePreview').innerHTML = '';
-        }
+window.doLogin = async function() {
+    clearAuthError('loginError');
+    const email    = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    if (!email || !password) { showAuthError('loginError', 'Veuillez remplir tous les champs.'); return; }
+    setAuthLoading('loginBtn', true);
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+    } catch(e) {
+        setAuthLoading('loginBtn', false);
+        showAuthError('loginError', friendlyAuthError(e.code));
+    }
+};
 
-        // Image handling
-        document.getElementById('cardFrontImage')?.addEventListener('change', function(e) {
-            handleImagePreview(e, 'frontImagePreview');
-        });
+window.doRegister = async function() {
+    clearAuthError('registerError');
+    const email    = document.getElementById('registerEmail').value.trim();
+    const password = document.getElementById('registerPassword').value;
+    const confirm  = document.getElementById('registerPasswordConfirm').value;
+    if (!email || !password) { showAuthError('registerError', 'Veuillez remplir tous les champs.'); return; }
+    if (password !== confirm) { showAuthError('registerError', 'Les mots de passe ne correspondent pas.'); return; }
+    if (password.length < 6)  { showAuthError('registerError', 'Le mot de passe doit contenir au moins 6 caractères.'); return; }
+    setAuthLoading('registerBtn', true);
+    try {
+        await createUserWithEmailAndPassword(auth, email, password);
+    } catch(e) {
+        setAuthLoading('registerBtn', false);
+        showAuthError('registerError', friendlyAuthError(e.code));
+    }
+};
 
-        document.getElementById('cardBackImage')?.addEventListener('change', function(e) {
-            handleImagePreview(e, 'backImagePreview');
-        });
+window.doLogout = function() {
+    showConfirm('Se déconnecter', 'Voulez-vous vraiment vous déconnecter ?', () => signOut(auth));
+};
 
-        document.getElementById('editCardFrontImage')?.addEventListener('change', function(e) {
-            handleImagePreview(e, 'editFrontImagePreview');
-        });
+window.doResetPassword = async function() {
+    const email = document.getElementById('loginEmail').value.trim();
+    if (!email) { showAuthError('loginError', 'Entrez votre email ci-dessus pour réinitialiser votre mot de passe.'); return; }
+    try {
+        await sendPasswordResetEmail(auth, email);
+        showAlert('📧 Email envoyé', `Un lien de réinitialisation a été envoyé à ${email}.`);
+    } catch(e) {
+        showAuthError('loginError', friendlyAuthError(e.code));
+    }
+};
 
-        document.getElementById('editCardBackImage')?.addEventListener('change', function(e) {
-            handleImagePreview(e, 'editBackImagePreview');
-        });
+function friendlyAuthError(code) {
+    const msgs = {
+        'auth/user-not-found':       'Aucun compte trouvé avec cet email.',
+        'auth/wrong-password':       'Mot de passe incorrect.',
+        'auth/invalid-credential':   'Email ou mot de passe incorrect.',
+        'auth/email-already-in-use': 'Cet email est déjà utilisé.',
+        'auth/invalid-email':        'Adresse email invalide.',
+        'auth/weak-password':        'Mot de passe trop faible (6 caractères minimum).',
+        'auth/too-many-requests':    'Trop de tentatives. Réessayez dans quelques minutes.',
+        'auth/network-request-failed': 'Erreur réseau. Vérifiez votre connexion.',
+    };
+    return msgs[code] || 'Une erreur est survenue. Réessayez.';
+}
 
-        function handleImagePreview(event, previewId) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const preview = document.getElementById(previewId);
-                    preview.innerHTML = `<img src="${e.target.result}" alt="Aperçu">`;
-                };
-                reader.readAsDataURL(file);
-            }
-        }
+// ── Listener d'état d'authentification ──────────────────────
+onAuthStateChanged(auth, (user) => {
+    document.getElementById('globalLoader').classList.add('hidden');
 
-        function addCard() {
-            const front = document.getElementById('cardFrontText').value.trim();
-            const back = document.getElementById('cardBackText').value.trim();
-
-            if (!front || !back) {
-                alert('⚠️ Le mot/texte recto et verso sont obligatoires');
-                return;
-            }
-
-            let frontImage = null;
-            let backImage = null;
-
-            const frontFile = document.getElementById('cardFrontImage').files[0];
-            const backFile = document.getElementById('cardBackImage').files[0];
-
-            let filesProcessed = 0;
-            const totalFiles = (frontFile ? 1 : 0) + (backFile ? 1 : 0);
-
-            if (totalFiles === 0) {
-                finishAddingCard(front, back, null, null);
-            } else {
-                if (frontFile) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        frontImage = e.target.result;
-                        filesProcessed++;
-                        if (filesProcessed === totalFiles) {
-                            finishAddingCard(front, back, frontImage, backImage);
-                        }
-                    };
-                    reader.readAsDataURL(frontFile);
-                }
-
-                if (backFile) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        backImage = e.target.result;
-                        filesProcessed++;
-                        if (filesProcessed === totalFiles) {
-                            finishAddingCard(front, back, frontImage, backImage);
-                        }
-                    };
-                    reader.readAsDataURL(backFile);
-                }
-            }
-        }
-
-        function finishAddingCard(front, back, frontImage, backImage) {
-            app.addCard(app.currentListId, { front, back, frontImage, backImage });
-            closeAddCardModal();
-            renderCardsInList();
-        }
-
-        function openEditCardModal(cardId) {
-            app.editingCardId = cardId;
-            const list = app.getList(app.currentListId);
-            const card = list.cards.find(c => c.id === cardId);
-
-            document.getElementById('editCardFrontText').value = card.front;
-            document.getElementById('editCardBackText').value = card.back;
-
-            const editFrontPreview = document.getElementById('editFrontImagePreview');
-            const editBackPreview = document.getElementById('editBackImagePreview');
-
-            editFrontPreview.innerHTML = card.frontImage ? `<img src="${card.frontImage}" alt="Aperçu">` : '';
-            editBackPreview.innerHTML = card.backImage ? `<img src="${card.backImage}" alt="Aperçu">` : '';
-
-            document.getElementById('editCardModal').classList.add('active');
-        }
-
-        function closeEditCardModal() {
-            document.getElementById('editCardModal').classList.remove('active');
-            app.editingCardId = null;
-        }
-
-        function updateCard() {
-            const front = document.getElementById('editCardFrontText').value.trim();
-            const back = document.getElementById('editCardBackText').value.trim();
-
-            if (!front || !back) {
-                alert('⚠️ Le mot/texte recto et verso sont obligatoires');
-                return;
-            }
-
-            const list = app.getList(app.currentListId);
-            const card = list.cards.find(c => c.id === app.editingCardId);
-
-            let frontImage = card.frontImage;
-            let backImage = card.backImage;
-
-            const frontFile = document.getElementById('editCardFrontImage').files[0];
-            const backFile = document.getElementById('editCardBackImage').files[0];
-
-            let filesProcessed = 0;
-            const totalFiles = (frontFile ? 1 : 0) + (backFile ? 1 : 0);
-
-            if (totalFiles === 0) {
-                finishUpdatingCard(front, back, frontImage, backImage);
-            } else {
-                if (frontFile) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        frontImage = e.target.result;
-                        filesProcessed++;
-                        if (filesProcessed === totalFiles) {
-                            finishUpdatingCard(front, back, frontImage, backImage);
-                        }
-                    };
-                    reader.readAsDataURL(frontFile);
-                }
-
-                if (backFile) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        backImage = e.target.result;
-                        filesProcessed++;
-                        if (filesProcessed === totalFiles) {
-                            finishUpdatingCard(front, back, frontImage, backImage);
-                        }
-                    };
-                    reader.readAsDataURL(backFile);
-                }
-            }
-        }
-
-        function finishUpdatingCard(front, back, frontImage, backImage) {
-            app.updateCard(app.currentListId, app.editingCardId, { front, back, frontImage, backImage });
-            closeEditCardModal();
-            renderCardsInList();
-        }
-
-        function deleteCard() {
-            if (confirm('Êtes-vous sûr de vouloir supprimer cette carte ?')) {
-                app.deleteCard(app.currentListId, app.editingCardId);
-                closeEditCardModal();
-                renderCardsInList();
-            }
-        }
-
-        function deleteCardConfirm(cardId) {
-            openEditCardModal(cardId);
-            setTimeout(() => deleteCard(), 100);
-        }
-
-        function toggleSettings() {
-            const settingsScreen = document.getElementById('settingsScreen');
-            if (settingsScreen.classList.contains('active')) {
-                showHomeScreen();
-            } else {
-                showScreen('settingsScreen');
-            }
-        }
-
-        function clearAllData() {
-            app.clearAllData();
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // Import/Export Functions
-        document.getElementById('importFile')?.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                try {
-                    const importedData = JSON.parse(event.target.result);
-                    
-                    // Validation basique
-                    if (!importedData.lists || !Array.isArray(importedData.lists)) {
-                        alert('❌ Format de fichier invalide');
-                        return;
-                    }
-
-                    // Demander confirmation
-                    if (confirm('📥 Importer ces listes ?\n\nCela ajoutera les listes importées à vos listes existantes.')) {
-                        // Ajouter les listes importées
-                        importedData.lists.forEach(importedList => {
-                            const newList = {
-                                id: Date.now() + Math.random(),
-                                name: importedList.name,
-                                cards: importedList.cards || [],
-                                createdAt: new Date().toISOString()
-                            };
-                            app.data.lists.push(newList);
-                        });
-
-                        app.saveData();
-                        alert('✅ Listes importées avec succès !');
-                        renderLists();
-                        showHomeScreen();
-                    }
-                } catch (error) {
-                    alert('❌ Erreur lors de la lecture du fichier: ' + error.message);
-                }
-            };
-            reader.readAsText(file);
-            e.target.value = '';
-        });
-
-        function exportData() {
-            if (app.data.lists.length === 0) {
-                alert('⚠️ Aucune liste à exporter');
-                return;
-            }
-
-            const dataToExport = {
-                version: '1.0',
-                exportedAt: new Date().toISOString(),
-                lists: app.data.lists
-            };
-
-            const dataStr = JSON.stringify(dataToExport, null, 2);
-            const blob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `flashcards_${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-
-            alert('✅ Listes exportées avec succès !');
-        }
-
-        // Close modals when clicking outside
-        document.querySelectorAll('.modal').forEach(modal => {
-            modal.addEventListener('click', function(e) {
-                if (e.target === this) {
-                    this.classList.remove('active');
-                }
-            });
-        });
-
-        // Initialize
+    if (user) {
+        currentUser = user;
+        // Afficher l'app
+        document.getElementById('authWrapper').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'flex';
+        setTextSafe('headerUserEmail', user.email);
+        setTextSafe('settingsUserEmail', user.email);
+        // Écoute Firestore
+        subscribeToLists();
+        showScreen('homeScreen');
         renderLists();
+    } else {
+        currentUser = null;
+        if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+        localData = { lists: [] };
+        // Afficher auth
+        document.getElementById('mainApp').style.display = 'none';
+        document.getElementById('authWrapper').style.display = 'block';
+        document.getElementById('loginScreen').style.display = 'block';
+        document.getElementById('registerScreen').style.display = 'none';
+    }
+});
 
-        // Service Worker Registration (PWA)
-        if ('serviceWorker' in navigator) {
-            const swCode = `
-                self.addEventListener('install', e => {
-                    console.log('Service Worker installing...');
-                    self.skipWaiting();
-                });
+// ── Navigation ───────────────────────────────────────────────
+function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+}
+window.showScreen = showScreen;
 
-                self.addEventListener('activate', e => {
-                    console.log('Service Worker activating...');
-                    e.waitUntil(clients.claim());
-                });
+function showHomeScreen() {
+    showScreen('homeScreen');
+    currentListId = null;
+    renderLists();
+}
+window.showHomeScreen = showHomeScreen;
 
-                self.addEventListener('fetch', e => {
-                    e.respondWith(fetch(e.request).catch(() => new Response('Offline')));
-                });
-            `;
+// ── Rendu des listes ─────────────────────────────────────────
+function renderLists() {
+    const container = document.getElementById('listContainer');
+    container.innerHTML = '';
 
-            const blob = new Blob([swCode], { type: 'application/javascript' });
-            const swUrl = URL.createObjectURL(blob);
+    if (localData.lists.length === 0) {
+        container.appendChild(createEl('div', { className: 'empty-state' }, [
+            createEl('div', { className: 'empty-state-icon' }, ['📋']),
+            createEl('div', { className: 'empty-state-title' }, ['Aucune liste créée']),
+            createEl('p', {}, ['Cliquez sur + pour créer votre première liste']),
+        ]));
+        return;
+    }
 
-            navigator.serviceWorker.register(swUrl).catch(e => {
-                console.log('Service Worker registration failed:', e);
-            });
+    for (const list of localData.lists) {
+        const cards = list.cards || [];
+        const knownCount    = cards.filter(c => (c.srsLevel || 0) >= 2).length;
+        const learningCount = cards.filter(c => (c.srsLevel || 0) === 1).length;
+        const newCount      = cards.length - knownCount - learningCount;
+
+        const card = createEl('div', { className: 'card' });
+        const header = createEl('div', { className: 'card-header' });
+        const titleBlock = createEl('div');
+
+        titleBlock.appendChild(createEl('div', { className: 'card-title' }, [list.name]));
+        titleBlock.appendChild(createEl('div', { className: 'card-info' }, [`${cards.length} carte${cards.length !== 1 ? 's' : ''}`]));
+
+        const badges = createEl('div', { style: { marginTop: '6px', display: 'flex', gap: '6px', flexWrap: 'wrap' } });
+        if (knownCount > 0)    badges.appendChild(createEl('span', { className: 'srs-badge srs-known' },    [`✓ ${knownCount} connu${knownCount > 1 ? 's' : ''}`]));
+        if (learningCount > 0) badges.appendChild(createEl('span', { className: 'srs-badge srs-learning' }, [`⟳ ${learningCount} en cours`]));
+        if (newCount > 0)      badges.appendChild(createEl('span', { className: 'srs-badge srs-new' },      [`★ ${newCount} nouveau${newCount > 1 ? 'x' : ''}`]));
+        titleBlock.appendChild(badges);
+
+        header.appendChild(titleBlock);
+        card.appendChild(header);
+
+        const actions = createEl('div', { className: 'card-actions' });
+        actions.appendChild(createEl('button', { className: 'btn btn-primary',       onClick: () => startLearning(list.id) }, ['🎓 Apprendre']));
+        actions.appendChild(createEl('button', { className: 'btn btn-secondary',     onClick: () => editList(list.id) },     ['✏️ Modifier']));
+        actions.appendChild(createEl('button', { className: 'btn btn-danger btn-sm', onClick: () => deleteListConfirm(list.id) }, ['🗑️']));
+        card.appendChild(actions);
+        container.appendChild(card);
+    }
+}
+
+// ── Édition liste ────────────────────────────────────────────
+function editList(listId) {
+    currentListId = listId;
+    const list = getList(listId);
+    setTextSafe('editListTitle', list.name);
+    renderCardsInList();
+    showScreen('editListScreen');
+}
+window.editList = editList;
+
+function getList(listId) { return localData.lists.find(l => l.id === listId); }
+
+function renderCardsInList() {
+    const list = getList(currentListId);
+    const container = document.getElementById('cardsInListContainer');
+    container.innerHTML = '';
+
+    if (!list || !list.cards || list.cards.length === 0) {
+        container.appendChild(createEl('div', { className: 'empty-state' }, [
+            createEl('div', { className: 'empty-state-icon' }, ['🃏']),
+            createEl('div', { className: 'empty-state-title' }, ['Aucune carte']),
+            createEl('p', {}, ['Créez votre première carte']),
+        ]));
+        return;
+    }
+
+    const srsLabels  = ['Nouveau', 'En cours', 'Connu'];
+    const srsClasses = ['srs-new', 'srs-learning', 'srs-known'];
+
+    for (const card of list.cards) {
+        const level = card.srsLevel || 0;
+        const cardEl = createEl('div', { className: 'card' });
+        const header = createEl('div', { className: 'card-header' });
+        const info   = createEl('div', { style: { flex: '1' } });
+
+        info.appendChild(createEl('div', { className: 'card-title' }, [card.front]));
+        const backEl = createEl('div', { className: 'card-info' });
+        backEl.appendChild(document.createTextNode('→ ' + card.back));
+        info.appendChild(backEl);
+
+        if (card.frontComment) {
+            info.appendChild(createEl('div', { style: { fontSize: '12px', fontStyle: 'italic', color: 'var(--text-light)', marginTop: '2px' } }, [card.frontComment]));
         }
-    </script>
+
+        info.appendChild(createEl('div', { style: { marginTop: '4px', fontSize: '12px', color: 'var(--text-light)' } },
+            [`✓ ${card.correctCount || 0}  ✕ ${card.incorrectCount || 0}`]));
+        info.appendChild(createEl('span', { className: `srs-badge ${srsClasses[level]}`, style: { marginTop: '4px' } }, [srsLabels[level]]));
+
+        header.appendChild(info);
+        cardEl.appendChild(header);
+
+        const actions = createEl('div', { className: 'card-actions' });
+        actions.appendChild(createEl('button', { className: 'btn btn-secondary btn-sm', onClick: () => openEditCardModal(card.id) }, ['Modifier']));
+        actions.appendChild(createEl('button', { className: 'btn btn-danger btn-sm',    onClick: () => deleteCardDirectConfirm(card.id) }, ['Supprimer']));
+        cardEl.appendChild(actions);
+        container.appendChild(cardEl);
+    }
+}
+
+// ── Apprentissage ────────────────────────────────────────────
+function startLearning(listId) {
+    const list = getList(listId);
+    if (!list || !list.cards || list.cards.length === 0) {
+        showAlert('⚠️ Liste vide', 'Cette liste ne contient pas de cartes !');
+        return;
+    }
+    currentListId    = listId;
+    currentCardIndex = 0;
+    isFlipped        = false;
+    sessionCorrect   = 0;
+    sessionIncorrect = 0;
+    sessionResults   = [];
+
+    setTextSafe('learningListTitle', list.name);
+    setTextSafe('totalCards', list.cards.length);
+    setTextSafe('sessionCorrect', 0);
+    setTextSafe('sessionIncorrect', 0);
+    displayCard();
+    showScreen('learningScreen');
+}
+window.startLearning = startLearning;
+
+function displayCard() {
+    const list = getList(currentListId);
+    const card = list.cards[currentCardIndex];
+    const flashcardEl = document.getElementById('flashcard');
+
+    flashcardEl.classList.remove('flipped');
+    isFlipped = false;
+
+    setTextSafe('cardIndex', currentCardIndex + 1);
+    setTextSafe('flashcardLabel', 'RECTO');
+    setTextSafe('cardFront', card.front);
+
+    const commentEl = document.getElementById('cardComment');
+    if (card.frontComment) { setTextSafe(commentEl, card.frontComment); commentEl.style.display = 'block'; }
+    else { commentEl.style.display = 'none'; }
+
+    const imgEl = document.getElementById('frontImage');
+    if (card.frontImage) { imgEl.src = card.frontImage; imgEl.style.display = 'block'; }
+    else { imgEl.style.display = 'none'; }
+
+    document.getElementById('progressFill').style.width = ((currentCardIndex + 1) / list.cards.length * 100) + '%';
+}
+
+window.flipCard = function() {
+    const list = getList(currentListId);
+    const card = list.cards[currentCardIndex];
+    const flashcardEl = document.getElementById('flashcard');
+    isFlipped = !isFlipped;
+
+    if (isFlipped) {
+        flashcardEl.classList.add('flipped');
+        setTextSafe('flashcardLabel', 'VERSO');
+        setTextSafe('cardFront', card.back);
+        const commentEl = document.getElementById('cardComment');
+        if (card.backComment) { setTextSafe(commentEl, card.backComment); commentEl.style.display = 'block'; }
+        else { commentEl.style.display = 'none'; }
+        const imgEl = document.getElementById('frontImage');
+        if (card.backImage) { imgEl.src = card.backImage; imgEl.style.display = 'block'; }
+        else { imgEl.style.display = 'none'; }
+    } else {
+        displayCard();
+    }
+};
+
+window.nextCard = function() {
+    const list = getList(currentListId);
+    if (currentCardIndex < list.cards.length - 1) { currentCardIndex++; displayCard(); }
+    else { showSessionResults(); }
+};
+
+window.previousCard = function() {
+    if (currentCardIndex > 0) { currentCardIndex--; displayCard(); }
+};
+
+window.markCardCorrect = function() {
+    const list = getList(currentListId);
+    const card = list.cards[currentCardIndex];
+    card.srsLevel      = Math.min((card.srsLevel || 0) + 1, 2);
+    card.correctCount  = (card.correctCount || 0) + 1;
+    card.lastReviewed  = new Date().toISOString();
+    sessionCorrect++;
+    sessionResults.push({ cardId: card.id, known: true });
+    setTextSafe('sessionCorrect', sessionCorrect);
+    saveListToFirestore(list);
+    window.nextCard();
+};
+
+window.markCardIncorrect = function() {
+    const list = getList(currentListId);
+    const card = list.cards[currentCardIndex];
+    card.srsLevel       = 0;
+    card.incorrectCount = (card.incorrectCount || 0) + 1;
+    card.lastReviewed   = new Date().toISOString();
+    sessionIncorrect++;
+    sessionResults.push({ cardId: card.id, known: false });
+    setTextSafe('sessionIncorrect', sessionIncorrect);
+    saveListToFirestore(list);
+    window.nextCard();
+};
+
+function showSessionResults() {
+    const list  = getList(currentListId);
+    const total = sessionResults.length;
+    const score = total > 0 ? Math.round((sessionCorrect / total) * 100) : 0;
+    setTextSafe('resultTotal', total);
+    setTextSafe('resultCorrect', sessionCorrect);
+    setTextSafe('resultIncorrect', sessionIncorrect);
+    const emoji = score >= 80 ? '🏆' : score >= 50 ? '👍' : '💪';
+    setTextSafe('resultScore', `${emoji} Score : ${score}%`);
+
+    const toReview = sessionResults.filter(r => !r.known)
+        .map(r => list.cards.find(c => c.id === r.cardId)).filter(Boolean);
+    const toReviewList = document.getElementById('toReviewList');
+    toReviewList.innerHTML = '';
+    if (toReview.length > 0) {
+        toReviewList.appendChild(createEl('h3', { style: { marginBottom: '12px', fontSize: '16px' } }, [`📖 À revoir (${toReview.length})`]));
+        for (const c of toReview) {
+            const item = createEl('div', { className: 'card', style: { padding: '12px' } });
+            item.appendChild(createEl('div', { style: { fontWeight: '600', marginBottom: '4px' } }, [c.front]));
+            item.appendChild(createEl('div', { style: { color: 'var(--text-light)', fontSize: '13px' } }, ['→ ' + c.back]));
+            toReviewList.appendChild(item);
+        }
+    }
+    showScreen('resultsScreen');
+}
+
+window.restartSession = function() { startLearning(currentListId); };
+window.endLearning    = function() { showHomeScreen(); };
+
+// ── Créer liste ───────────────────────────────────────────────
+window.showCreateListModal = function() {
+    document.getElementById('createListModal').classList.add('active');
+    document.getElementById('listName').focus();
+};
+window.closeCreateListModal = function() {
+    document.getElementById('createListModal').classList.remove('active');
+    document.getElementById('listName').value = '';
+};
+window.createList = async function() {
+    const name = document.getElementById('listName').value.trim();
+    if (!name) { showAlert('⚠️ Champ manquant', 'Veuillez entrer un nom pour la liste'); return; }
+    const list = { id: generateId(), name, cards: [], createdAt: new Date().toISOString() };
+    localData.lists.push(list);
+    await saveListToFirestore(list);
+    window.closeCreateListModal();
+    renderLists();
+};
+
+window.deleteListConfirm = function(listId) {
+    const list = getList(listId);
+    showConfirm('Supprimer la liste', `Supprimer "${list.name}" et toutes ses cartes ?`, async () => {
+        localData.lists = localData.lists.filter(l => l.id !== listId);
+        await deleteListFromFirestore(listId);
+        renderLists();
+    });
+};
+
+// ── Ajouter carte ─────────────────────────────────────────────
+window.showAddCardModal = function() {
+    document.getElementById('addCardModal').classList.add('active');
+    clearCardForm();
+    document.getElementById('cardFrontText').focus();
+};
+window.closeAddCardModal = function() {
+    document.getElementById('addCardModal').classList.remove('active');
+    clearCardForm();
+};
+function clearCardForm() {
+    ['cardFrontText','cardBackText','cardFrontComment','cardBackComment'].forEach(id => document.getElementById(id).value = '');
+    ['cardFrontImage','cardBackImage'].forEach(id => document.getElementById(id).value = '');
+    ['frontImagePreview','backImagePreview'].forEach(id => document.getElementById(id).innerHTML = '');
+}
+
+function readFileAsDataURL(file) {
+    return new Promise((res, rej) => { const r = new FileReader(); r.onload = e => res(e.target.result); r.onerror = rej; r.readAsDataURL(file); });
+}
+
+function handleImagePreview(event, previewId) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        const preview = document.getElementById(previewId);
+        preview.innerHTML = '';
+        preview.appendChild(createEl('img', { src: e.target.result, alt: 'Aperçu' }));
+    };
+    reader.readAsDataURL(file);
+}
+
+document.getElementById('cardFrontImage').addEventListener('change', e => handleImagePreview(e, 'frontImagePreview'));
+document.getElementById('cardBackImage').addEventListener('change',  e => handleImagePreview(e, 'backImagePreview'));
+document.getElementById('editCardFrontImage').addEventListener('change', e => handleImagePreview(e, 'editFrontImagePreview'));
+document.getElementById('editCardBackImage').addEventListener('change',  e => handleImagePreview(e, 'editBackImagePreview'));
+
+window.addCard = async function() {
+    const front = document.getElementById('cardFrontText').value.trim();
+    const back  = document.getElementById('cardBackText').value.trim();
+    if (!front || !back) { showAlert('⚠️ Champs manquants', 'Le recto et le verso sont obligatoires'); return; }
+
+    const frontComment = document.getElementById('cardFrontComment').value.trim() || null;
+    const backComment  = document.getElementById('cardBackComment').value.trim()  || null;
+    const frontFile    = document.getElementById('cardFrontImage').files[0];
+    const backFile     = document.getElementById('cardBackImage').files[0];
+    const frontImage   = frontFile ? await readFileAsDataURL(frontFile) : null;
+    const backImage    = backFile  ? await readFileAsDataURL(backFile)  : null;
+
+    const list = getList(currentListId);
+    list.cards.push({
+        id: generateId(), front, back, frontComment, backComment,
+        frontImage, backImage, srsLevel: 0, correctCount: 0, incorrectCount: 0,
+        createdAt: new Date().toISOString()
+    });
+    await saveListToFirestore(list);
+    window.closeAddCardModal();
+    renderCardsInList();
+};
+
+// ── Modifier carte ────────────────────────────────────────────
+window.openEditCardModal = function(cardId) {
+    editingCardId = cardId;
+    const list = getList(currentListId);
+    const card = list.cards.find(c => c.id === cardId);
+    document.getElementById('editCardFrontText').value    = card.front;
+    document.getElementById('editCardBackText').value     = card.back;
+    document.getElementById('editCardFrontComment').value = card.frontComment || '';
+    document.getElementById('editCardBackComment').value  = card.backComment  || '';
+    const fp = document.getElementById('editFrontImagePreview');
+    const bp = document.getElementById('editBackImagePreview');
+    fp.innerHTML = bp.innerHTML = '';
+    if (card.frontImage) fp.appendChild(createEl('img', { src: card.frontImage, alt: 'Aperçu' }));
+    if (card.backImage)  bp.appendChild(createEl('img', { src: card.backImage,  alt: 'Aperçu' }));
+    document.getElementById('editCardModal').classList.add('active');
+};
+window.closeEditCardModal = function() {
+    document.getElementById('editCardModal').classList.remove('active');
+    editingCardId = null;
+};
+window.updateCard = async function() {
+    const front = document.getElementById('editCardFrontText').value.trim();
+    const back  = document.getElementById('editCardBackText').value.trim();
+    if (!front || !back) { showAlert('⚠️ Champs manquants', 'Le recto et le verso sont obligatoires'); return; }
+
+    const list = getList(currentListId);
+    const card = list.cards.find(c => c.id === editingCardId);
+    const frontComment = document.getElementById('editCardFrontComment').value.trim() || null;
+    const backComment  = document.getElementById('editCardBackComment').value.trim()  || null;
+    const frontFile    = document.getElementById('editCardFrontImage').files[0];
+    const backFile     = document.getElementById('editCardBackImage').files[0];
+    if (frontFile) card.frontImage = await readFileAsDataURL(frontFile);
+    if (backFile)  card.backImage  = await readFileAsDataURL(backFile);
+    Object.assign(card, { front, back, frontComment, backComment });
+    await saveListToFirestore(list);
+    window.closeEditCardModal();
+    renderCardsInList();
+};
+window.confirmDeleteCard = function() {
+    showConfirm('Supprimer la carte', 'Êtes-vous sûr ?', async () => {
+        const list = getList(currentListId);
+        list.cards = list.cards.filter(c => c.id !== editingCardId);
+        await saveListToFirestore(list);
+        window.closeEditCardModal();
+        renderCardsInList();
+    });
+};
+window.deleteCardDirectConfirm = function(cardId) {
+    showConfirm('Supprimer la carte', 'Êtes-vous sûr ?', async () => {
+        const list = getList(currentListId);
+        list.cards = list.cards.filter(c => c.id !== cardId);
+        await saveListToFirestore(list);
+        renderCardsInList();
+    });
+};
+
+// ── Paramètres ────────────────────────────────────────────────
+window.toggleSettings = function() {
+    const s = document.getElementById('settingsScreen');
+    if (s.classList.contains('active')) showHomeScreen();
+    else showScreen('settingsScreen');
+};
+window.clearAllData = function() {
+    showConfirm('🗑️ Tout supprimer', 'Supprimer toutes vos listes ? Action irréversible.', async () => {
+        const batch = writeBatch(db);
+        localData.lists.forEach(l => batch.delete(listDocRef(l.id)));
+        await batch.commit();
+        localData.lists = [];
+        showHomeScreen();
+    });
+};
+
+// ── Export JSON ───────────────────────────────────────────────
+window.exportData = function() {
+    if (localData.lists.length === 0) { showAlert('⚠️ Rien à exporter', 'Vous n\'avez aucune liste.'); return; }
+    const dataStr = JSON.stringify({ version: '3.0', exportedAt: new Date().toISOString(), lists: localData.lists }, null, 2);
+    const url  = URL.createObjectURL(new Blob([dataStr], { type: 'application/json' }));
+    const link = createEl('a', { href: url, download: `flashcards_${new Date().toISOString().split('T')[0]}.json` });
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+};
+
+// ── Import JSON ───────────────────────────────────────────────
+document.getElementById('importFile').addEventListener('change', function(e) {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async function(ev) {
+        try {
+            const data = JSON.parse(ev.target.result);
+            if (!data.lists || !Array.isArray(data.lists)) { showAlert('❌ Format invalide', 'Le fichier ne contient pas de listes valides.'); return; }
+            showConfirm('📥 Importer', `${data.lists.length} liste(s) seront ajoutées à vos données.`, async () => {
+                for (const importedList of data.lists) {
+                    const list = { id: generateId(), name: importedList.name || 'Sans nom',
+                        cards: (importedList.cards || []).map(c => ({ ...c, id: generateId(), srsLevel: c.srsLevel || 0, correctCount: c.correctCount || 0, incorrectCount: c.incorrectCount || 0 })),
+                        createdAt: new Date().toISOString() };
+                    localData.lists.push(list);
+                    await saveListToFirestore(list);
+                }
+                showAlert('✅ Import réussi', `${data.lists.length} liste(s) importée(s) !`, () => { renderLists(); showHomeScreen(); });
+            });
+        } catch(err) { showAlert('❌ Erreur', 'Fichier invalide : ' + err.message); }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+});
+
+// ── Fermer modals en cliquant dehors ──────────────────────────
+document.querySelectorAll('.modal').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('active'); });
+});
+document.getElementById('dialogOverlay').addEventListener('click', e => { if (e.target.id === 'dialogOverlay') closeDialog(); });
+document.getElementById('listName').addEventListener('keydown', e => { if (e.key === 'Enter') window.createList(); });
+
+// Touches clavier pour la session d'apprentissage
+document.addEventListener('keydown', e => {
+    if (!document.getElementById('learningScreen').classList.contains('active')) return;
+    if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); window.flipCard(); }
+    if (e.key === 'ArrowRight') window.nextCard();
+    if (e.key === 'ArrowLeft')  window.previousCard();
+    if (e.key === 'ArrowUp')    window.markCardCorrect();
+    if (e.key === 'ArrowDown')  window.markCardIncorrect();
+});
+
+</script>
 </body>
 </html>
